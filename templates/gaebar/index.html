@@ -1,0 +1,786 @@
+{% extends "gaebar/base.html" %}
+
+{% block head %}
+	<style type="text/css" media="screen">
+
+		body {
+			background-image: url(static/magic-pony-django-wallpaper.png);
+			background-position: -150 -200;
+		}
+
+		#titleImage {
+			position:absolute;
+			top:20px;
+			left:277px;
+			z-index:-1;
+		}
+
+		#pinkGae {
+			position:absolute;
+			left:.50em;
+			bottom:7.75em;
+		}
+		
+		#GPL {
+			position:absolute;
+			left:41em;
+			top:6em;
+			z-index:-1;
+		}
+
+		h2 {
+			font-size:200%;
+			font-weight: normal;
+			display:inline;
+		}
+		
+		.controls, .controlsCentered {
+			margin-top:1em;
+			padding:.5em;
+			/*background-color: #ccc;*/
+			background-image: url(static/transparent-gray.png);
+			background-repeat: repeat;
+			text-align:left;
+			border: 1px solid white;
+		}	
+		
+		.controlsCentered {
+			text-align:center;
+			border:none;
+			background-image:none;
+			background-color:#ffc2e7;
+		}
+		
+		#backup {
+			position:absolute;
+			bottom:5em;
+			left:1em;
+			right:1em;
+		}
+		
+		#restore {
+			position:absolute;
+			bottom:1em;
+			left:1em;
+			right:1em;
+		}
+		
+		/* Modal dialogs */
+		
+		#modalShade {
+			display:none;
+			position:fixed;
+			_position:absolute; /* hack for internet explorer 6*/
+			width:100%;
+			height:100%;
+			top:0;
+			left:0;
+			background:#000000;
+			border:1px solid #cecece;
+			z-index:1;
+			opacity:0.7;
+		}
+
+		#backupDialog {
+			display:none;
+			position:fixed;
+			_position:absolute; /* hack for internet explorer 6*/
+			width:600px;
+			height:500px;
+			background:#FFFFFF;
+			border:2px solid #cecece;
+			z-index:2;
+			padding:1em;
+		}
+
+		#restoreDialog {
+			display:none;
+			position:fixed;
+			_position:absolute; /* hack for internet explorer 6*/
+			width:600px;
+			height:357px;
+			background:#FFFFFF;
+			border:2px solid #cecece;
+			z-index:2;
+			padding:1em;
+		}
+
+		#confirmCancelDialog {
+			display:none;
+			position:fixed;
+			_position:absolute; /* hack for internet explorer 6*/
+			height:110px;
+			width:350px;
+			background:#FFFFFF;
+			border:2px solid #cecece;
+			z-index:3;
+			padding:12px;
+			font-size:13px;
+		}
+		
+		#restoreCompleteDialog {
+			display:none;
+			position:fixed;
+			_position:absolute; /* hack for internet explorer 6*/
+			height:105px;
+			width:350px;
+			background:#FFFFFF;
+			border:2px solid #cecece;
+			z-index:3;
+			padding:12px;
+			font-size:13px;
+		}
+
+		#backupCompleteDialog {
+			display:none;
+			position:fixed;
+			_position:absolute; /* hack for internet explorer 6*/
+			height:130px;
+			width:350px;
+			background:#FFFFFF;
+			border:2px solid #cecece;
+			z-index:3;
+			padding:12px;
+			font-size:13px;
+		}
+		
+		#noDataInBackupDialog {
+			display:none;
+			position:fixed;
+			_position:absolute; /* hack for internet explorer 6*/
+			height:130px;
+			width:350px;
+			background:#FFFFFF;
+			border:2px solid #cecece;
+			z-index:3;
+			padding:12px;
+			font-size:13px;
+		}
+
+		#downloadDialog {
+			display:none;
+			position:fixed;
+			_position:absolute; /* hack for internet explorer 6*/
+			height:80px;
+			width:400px;
+			background:#FFFFFF;
+			border:2px solid #cecece;
+			z-index:3;
+			padding:12px;
+			font-size:13px;
+		}
+		
+		#localServerDialog {
+			display:none;
+			position:fixed;
+			_position:absolute; /* hack for internet explorer 6*/
+			height:110px;
+			width:400px;
+			background:#FFFFFF;
+			border:2px solid #cecece;
+			z-index:3;
+			padding:12px;
+			font-size:13px;	
+		}
+		
+		#confirmCancelDialog .controls {
+			
+		}
+
+		.dialog h1 {
+			font-size:125%;
+			color:white;
+			border-bottom:1px solid #999;
+			background-color: #953bac;
+			padding:.5em;
+			margin-bottom:1em;
+			margin-top:-.9em;
+			margin-left:-.9em;
+			margin-right:-.9em;
+		}
+		
+		.dialog h2 {
+			font-size:120%;
+			font-weight: bold;
+		}
+		
+		#spinner {
+			position:absolute;
+			top:5px;
+			right:5px;
+		}
+		
+		#restoreAllModels, #allModels {
+			width:100%;
+		}
+		
+		#copyright {
+			position:absolute;
+			top:9em;
+			left:33em;
+			font-size:60%;
+		}
+		
+		#debug {
+			width:100%;
+		}
+		
+	</style>
+	
+	<script type="text/javascript" src="static/jquery-1.2.6.min.js"></script>
+	<script type="text/javascript" src="static/jquery.progressbar.min.js"></script>
+	
+	<script type="text/javascript">
+	
+		/* 		
+			Gaebar (Google App Engine Backup and Restore) Beta 1
+
+			A Naklab™ production sponsored by the <head> web conference - http://headconference.com
+
+			Copyright (c) 2009 Aral Balkan. http://aralbalkan.com
+
+			Released under the GNU GPL v3 License. See license.txt for the full license or read it here:
+			http://www.gnu.org/licenses/gpl-3.0-standalone.html
+			
+												* * *
+		
+			OK, folks, here's how we're going to do this: The only way to backup this baby
+			is to issue a series of calls from the client since we don't have long-running
+			processes on Google App Engine. Not going to get into that here, we all know
+			that it sucks and Google is hopefully working on it.
+			
+			What it does mean that you'll have to leave the client connected throughout
+			the backup process. And it may take a while. So grab a drink, kick back, and relax!
+			
+			Also keep your local server running too so that your backup can be automatically
+			downloaded.
+		*/
+	
+		//
+		// Google App Engine can randomly return 500 errors. In this case, retrying _should_ 
+		// get us over the hurdle without ruining the backup. We'll retry five times (you 
+		// can raise or lower this limit here.)
+		//
+		NUM_RETRIES_ON_FAILURE = 5;
+
+		//
+		// Nothing below this point should require customization. 
+		// 
+		
+		backupCancelled = false;
+		restoreCancelled = false;
+	
+		NO_RETRY = -1;
+		
+		lastCall = null;
+		numTries = 0;
+	
+		$.postJSON = function(url, data, callback) {
+			$.post(url, data, callback, "json");
+		};
+
+		function showStatusMessage(message){
+			old_debug_value = $("#debug").attr('value');
+			$("#debug").attr('value', message + "\n" + old_debug_value);			
+		}
+
+		function clearStatusMessage(){
+			$("#debug").attr('value', '');
+		}
+
+		$(document).ajaxError(function(){
+		    if (window.console && window.console.error) {
+		        console.error(arguments);
+		    }
+		
+			errorCode = arguments[1].status;
+			errorMessage = arguments[1].responseText;
+			
+			showStatusMessage(errorMessage);
+		
+			if (lastCall == NO_RETRY) {
+				// Don't retry this call.
+				alert("Got a " + errorCode + " error on a call that I can't retry. Backup cancelled.\n\nError " + errorCode + ": " + errorMessage);
+				cancelBackup();
+			} else if (numTries < NUM_RETRIES_ON_FAILURE) {
+				// Try the call again.
+				console.info("Got a " + errorCode + " error on Ajax call, trying again... (try "+ String(numTries+1)+")");
+				numTries++;
+				$.postJSON(currentCall, {}, backup_progress_handler);	
+			} else {
+				// Reached max retries.
+				alert("Sorry, tried 5 times and still getting an error " + errorCode +". I'm giving up and cancelling the backup.\n\nError " + errorCode + "::: " + errorMessage);
+				
+				cancelBackup();
+			}
+
+		});
+
+
+		function backup_progress_handler(data, textStatus) {
+			
+			// Reset the number of tries (in case a call failed earlier)
+			numTries = 0;
+			
+			if (backupCancelled) {
+				return;
+			}
+			
+			// str = ''
+			// for (i in data){
+			// 	str += i + " = " + data[i] + "\n";
+			// }
+			// alert(str);
+			
+			if (textStatus != "success"){
+				// Error
+				showStatusMessage(textStatus);
+				return;
+			}
+
+			// We ignore datastore errors (e.g., reference errors)
+			// to create a verbatim copy of the datastore, reference
+			// errors and all.
+			if (data.datastore_error) {
+				showStatusMessage(data.datastore_error_message);				
+			}
+
+			
+			if (data.empty_datastore) {
+				$("#backupDialog").fadeOut("slow");
+				showDialog("#noDataInBackupDialog");
+			}
+						
+			if (data.complete) {
+
+				//$("#debug").html("Done! Backup complete!");
+				// The backup is complete, forward to the local download server 
+				// to have the backup sucked in to the development server.
+				
+				$("#backupDialog").fadeOut("slow");
+				
+				showDialog("#localServerDialog");
+				
+				window.location.assign(data.download_url);
+				
+			} else {
+				//$("#debug").html("Last backed-up key: " + data.key +". Backing up next...");
+
+				backupPercent = Math.round(Number(data.num_models_done) * 100 / Number(data.num_models));
+				$("#backupStatus").progressBar(backupPercent, { barImage: 'static/progressbg_red.gif', boxImage: 'static/progressbar.gif'} );
+
+				$("#currentModel").html(data.current_model);
+				$("#currentIndex").html(data.current_index);
+				$("#numRows").html(data.num_rows);
+				$("#numCodeShards").html(data.num_shards);
+				$("#lastKey").html(data.last_key);
+				
+				modelsRemainingStr = '';
+				for (i = 0; i < data.models_remaining.length; i++) {
+					modelsRemainingStr += data.models_remaining[i] + ', ';
+				}
+				$("#modelsRemaining").html(modelsRemainingStr);				
+				
+				$("#lastUpdate").html(data.modified_at);			
+				
+				if (data.new_backup) {
+					// Display the general information only the first time as it's not updated
+					$("#createdAt").html(data.created_at);
+					//$("#allModels").html(data.all_models)
+					$("#backupKey").html(data.key);		
+					
+					allModelsStr = '';
+					for (i = 0; i < data.all_models.length; i++) {
+						allModelsStr += data.all_models[i] + ', ';
+					}
+					$("#allModels").attr('value', allModelsStr);				
+						
+				}
+				
+				// Continue the backup
+				currentCall = "/gaebar/backup-rows/?backup_key=" + data.key + '&last_key=' + data.last_key;
+				lastCall = currentCall;
+				$.postJSON(currentCall, {}, backup_progress_handler);
+			}
+		}
+		
+		//////////////////////////////////////////////////////////////////////
+		//
+		// Restore progress handler.
+		//
+		//////////////////////////////////////////////////////////////////////
+
+		function restoreProgressHandler(data, textStatus){
+			
+			if (restoreCancelled) {
+				return;
+			}
+			
+			if (textStatus != "success"){
+				// Error
+				$("#debug").html(textStatus)
+				return
+			}
+						
+			if (data.complete) {
+
+				// The restore is complete.	
+				showDialog("#restoreCompleteDialog");
+								
+			} else {
+
+				restorePercent = Math.round(Number(data.row_index) * 100 / Number(data.num_rows));
+				$("#restoreStatus").progressBar(restorePercent, { barImage: 'static/progressbg_red.gif', boxImage: 'static/progressbar.gif'} );
+			
+				// Update the status messages.				
+				$("#lastRowRestored").html(data.row_index);
+				$("#lastModelRestored").html(data.model);
+				
+				passStr = '';
+				if (Number(data.pass_number) == 0) {
+					passStr = 'First pass.'
+				} else {
+					passStr = 'Second pass.'
+				}
+				
+				$("#passNumber").html(passStr);
+				
+				if (data.created_at){
+					created_at_bits = data.created_at.split(" ");
+					created_at_date = created_at_bits[0];
+					created_at_time = created_at_bits[1].split(".")[0];
+					$("#restoreBackupStartedAt").html(created_at_date + ' at ' + created_at_time);
+				}
+				
+				$("#restoreNumberOfRows").html(data.num_rows);
+				$("#restoreNumberOfShards").html(data.num_shards);
+				
+				$("#restoreCurrentShard").html(data.shard_number+1);
+				
+				modelsStr = ''
+				for (i = 0; i < data.models.length; i++) {
+					modelsStr += data.models[i] + ', ';
+				}
+				// Remove last comma.
+				modelsStr = modelsStr.substr(0, modelsStr.length-2)
+				$("#restoreAllModels").attr('value', modelsStr);
+				
+				// Recurse: call the backup rows method.
+				url = "/gaebar/restore-row/?secret=" + data.secret + "&folder_name=" + data.folder_name + "&row_index=" + data.next_row_index + "&pass_number=" + data.pass_number;
+				
+				lastCall = NO_RETRY
+				$.postJSON(url, restoreProgressHandler);
+			}
+			
+		}
+
+
+		function startBackup(eventObj){
+			
+			clearStatusMessage();
+			
+			backupCancelled = false;
+
+			showDialog("#backupDialog");
+			
+			lastCall = NO_RETRY	
+			$.postJSON("/gaebar/backup-start/", backup_progress_handler);
+			return false;
+		}
+		
+		
+		function startRestore(eventObj){
+			
+			restoreCancelled = false;
+
+			showDialog("#restoreDialog");
+						
+			folderName = $("#restoreSelect").attr("options")[$("#restoreSelect").attr("selectedIndex")].value;
+			
+			lastCall = NO_RETRY
+			$.postJSON("/gaebar/get-restore-info/?folder_name=" + folderName, restoreProgressHandler);
+			return false;
+		}
+		
+		
+		
+		/* 
+			Modal backup dialog functions.
+			
+			With thanks to Adrian "yEnS" Mato Gondelle (www.yensdesign.com/yensamg@gmail.com)
+			for leading me in the right direction. Some of the code here is taken from his tutorial.
+		*/
+		
+		// Show a modal dialog
+		function showDialog(dialog){
+			// Center the dialog
+			var windowWidth = $(window).width();
+			var windowHeight = $(window).height();
+			var popupHeight = $(dialog).height();
+			var popupWidth = $(dialog).width();
+
+			$(dialog).css({
+				"position": "absolute",
+				"top": windowHeight/2-popupHeight/2,
+				"left": windowWidth/2-popupWidth/2
+			});
+
+			// Force the modal shade to take up the full vertical 
+			// height of the browser window.
+			$("#modalShade").css({
+				"height": windowHeight
+			});	
+
+			// Set the modal shade's z-index to one lower than the 
+			// actual dialog to make sure that it appears right behind it.
+			$("#modalShade").css({"z-index": $(dialog).css("z-index")-1});
+
+			// Fade in the modal shade and the dialog.
+			$("#modalShade").fadeIn("slow");
+			$(dialog).fadeIn("slow");
+		}
+
+
+		function confirmCancel(){
+			showDialog("#confirmCancelDialog");
+		}
+
+		function cancelBackup(){
+			// Remove the popups
+			removeConfirmCancelDialog();	
+			$("#backupDialog").fadeOut("slow");
+			$("#modalShade").fadeOut("slow");
+			dialogStatus = 0;
+
+			backupCancelled = true;
+		}
+
+		function removeConfirmCancelDialog(){
+			$("#modalShade").css({"z-index": 1});
+			$("#confirmCancelDialog").fadeOut("slow");	
+		}
+		
+		function restoreCompleteDialogOKButtonHandler(eventObj){
+			// Remove the restore complete and restore dialogs.
+			$("#restoreCompleteDialog").fadeOut("slow");
+			$("#restoreDialog").fadeOut("slow");
+			$("#modalShade").fadeOut("slow");
+		}
+
+		function backupCompleteDialogOKButtonHandler(eventObj){
+			// Remove the restore complete and restore dialogs.
+			$("#backupCompleteDialog").fadeOut("slow");
+			$("#modalShade").fadeOut("slow");
+		}
+
+
+		function noDataInBackupDialogOKButtonHandler(eventObj){
+			// Remove the restore complete and restore dialogs.
+			$("#noDataInBackupDialog").fadeOut("slow");
+			$("#modalShade").fadeOut("slow");
+		}
+
+		$(document).ready(function(){
+			
+			{% if complete %}
+				showDialog("#backupCompleteDialog");
+			{% endif %}
+			
+			{% if nodata %}
+				showDialog("#noDataInBackupDialog");
+			{% endif %}
+			
+									
+			$("#startBackupButton").click(startBackup);
+			
+			$("#startRestoreButton").click(startRestore);
+			
+			$("#restoreCompleteDialogOKButton").click(restoreCompleteDialogOKButtonHandler)
+			$("#backupCompleteDialogOKButton").click(backupCompleteDialogOKButtonHandler)
+			$("#noDataInBackupDialogOKButton").click(noDataInBackupDialogOKButtonHandler)
+			
+			//
+			// Modal dialog event handlers
+			//
+
+			// Cancel backup link click handler
+			$("#cancelBackupLink").click(function(){
+				confirmCancel();
+			});
+
+			// Confirmation dialog events
+			$("#yes").click(function(){
+				cancelBackup();
+			});
+
+			$("#no").click(function(){
+				removeConfirmCancelDialog();
+			});
+			
+		});
+	</script>
+	
+	
+{% endblock %}
+
+
+{% block content %}
+
+	<div id="backup" class="controls">
+		
+		{% if running_on_local_server %}
+			<h2>Backup unavailable</h2>
+		
+			as you're running on the local development server.
+		{% else %}
+			<h2>Backup</h2>
+		
+			the  <strong>{{current_host}}</strong>
+				
+			server.
+		
+			<button id="startBackupButton">Backup!</button>
+		
+		{% endif %}
+	</div>
+		
+	<div id="restore" class="controls">
+		{% if no_backups %}
+
+			The are currently no backups to <h2>restore</h2>.
+
+		{% else %}
+
+		<h2>Restore</h2>
+		
+		the backup created on 
+
+		<select id="restoreSelect">
+			{% for folder in folder_info %}
+				<option value="{{folder.name}}">{{folder.pretty_name}}</option>
+			{% endfor %}
+		</select>
+				
+		to the 
+		
+		{{current_host}}
+		
+		server.
+		
+		<button id="startRestoreButton">Restore!</button>
+		
+		{% endif %}
+	</div>
+
+	<div id="backupDialog" class="dialog">
+		<h1>Backup in progress <img id="spinner" src="static/ajax-loader.gif" width="35" height="35" alt="Loading..."></h1>
+		
+		<h2>Progress details:</h2>
+
+		<ul>
+			<li>Models backed up: <span id="numModelsRemaining"></span>  <span class="progressBar" id="backupStatus">0%</span></li>
+			<li>Current model: <span id="currentModel"></span></li>
+			<li>Current model row: <span id="currentIndex"></span></li>
+			<li>Total rows backed up: <span id="numRows"></span></li>
+			<li>Code shards used: <span id="numCodeShards"></span></li>
+			<li>Last update: <span id="lastUpdate"></span></li>
+			<li>Last key: <span id="lastKey"></span></li>
+		</ul>
+
+		<h2>General details:</h2>
+
+		<ul>
+			<li>Backup started at: <span id="createdAt"></li>
+			<li>Backup key: <span id="backupKey"></span></li>
+			<li>Models being backed up: <textarea id="allModels"></textarea></li>
+		</ul>
+		
+		<textarea id="debug"></textarea>
+		
+		<div class="controlsCentered">
+			<button id="cancelBackupLink">Cancel backup</a>
+		</div>
+	</div>
+	
+	<div id="confirmCancelDialog" class="dialog">
+		<h1>Cancel the backup?</h1>
+		<p>You have indicated that you want to cancel the backup. Are you sure that this is what you want to do?</p>
+		<div class="controlsCentered">
+			<button id="yes">Yes, cancel it!</button>
+			<button id="no">No, keep going!</button>
+		</div>
+	</div>
+	
+
+	<div id="localServerDialog" class="dialog">
+		<h1>Downloading backup to local server...</h1>
+		<p>The backup is now being downloaded to your local server. Please be patient as this will take a while...</p>
+		<div class="controlsCentered">
+			<button id="cancel">Cancel</button>
+		</div>
+	</div>
+
+	
+	<div id="modalShade"></div>
+
+	<img id="titleImage" src="static/gaebar.png" width="524" height="73" alt="Gaebar: Google App Engine Backup and Restore (powered by magical Django ponies) - made with love by Naklab.">
+	
+	<img id="pinkGae" src="static/pink-gae.png" width="142" height="105" alt="Pink Google App Engine">
+	
+
+	<div id="restoreDialog" class="dialog">
+		<h1>Restore in progress <img id="spinner" src="static/ajax-loader.gif" width="35" height="35" alt="Restoring..."></h1>
+		
+		<h2>Progress details:</h2>
+		
+		<ul>
+			<li>Current model: <span id="lastModelRestored"></span></li>
+			<li>Current shard: <span id="restoreCurrentShard"></span> of <span id="restoreNumberOfShards"></span></li>
+			<li><span id="passNumber"></span> <span class="progressBar" id="restoreStatus">0%</span></li>			
+			<li>Last row updated: <span id="lastRowRestored"></span> of <span id="restoreNumberOfRows"></span></li>
+		</ul>
+
+		<h2>General details:</h2>
+
+		<ul>
+			<li>Restoring backup created on <span id="restoreBackupStartedAt"></span></li>
+			<li>Models being restored: <textarea id="restoreAllModels"></textarea></li>
+		</ul>
+		
+		<div class="controlsCentered">
+			<button id="cancelBackupLink">Cancel restore</a>
+		</div>
+	</div>
+
+	<div id="restoreCompleteDialog" class="dialog">
+		<h1>Restore complete!</h1>
+		<p>Your backup has successfully been restored.</p>
+		<div class="controlsCentered">
+			<button id="restoreCompleteDialogOKButton">OK</button>
+		</div>
+	</div>
+	
+
+	<div id="backupCompleteDialog" class="dialog">
+		<h1>Backup complete!</h1>
+		<p>Your backup was successfully completed and downloaded to your local development server. You can find the source files under the <strong>gaebar/backups/</strong> folder.</p>
+		<div class="controlsCentered">
+			<button id="backupCompleteDialogOKButton">OK</button>
+		</div>
+	</div>
+
+	<div id="noDataInBackupDialog" class="dialog">
+		<h1>Datastore is empty</h1>
+		<p><strong>There is nothing to back up as the datastore on the {{current_host}} server is empty.</strong> A new backup set will not be created or downloaded to your local development server.</p>
+		<div class="controlsCentered">
+			<button id="noDataInBackupDialogOKButton">OK</button>
+		</div>
+	</div>
+	
+	<img src="static/gplv3-127x51.png" width="127" height="51" alt="Gaebar is released under the GNU GPL v3 license." id="GPL">
+
+	<p id="copyright">Copyright &copy; 2008, 2009 Aral Balkan. <a href="http://www.gnu.org/licenses/gpl-3.0.txt">Released under the GNU GPL 3 license</a>.</p>
+	
+	<div id="auth">{{auth}}</div>
+
+{% endblock %}

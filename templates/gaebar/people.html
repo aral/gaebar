@@ -1,0 +1,50 @@
+{% extends "admin/base.html" %}
+
+{% block head %}
+	<link rel="stylesheet" href="/css/admin/striped-table.css" type="text/css" media="screen">
+	<link rel="stylesheet" href="/css/navlist.css" type="text/css" media="screen">
+	<style type="text/css" media="screen">
+		#navlist, form{
+			margin-bottom:1em;
+		}
+		
+	</style>
+{% endblock %}
+
+
+{% block admin_content %}
+
+	<form action="/admin/people/" method="POST">
+		<label for="nickname">Nickname: </label>
+		<input type="text" name="nickname" value="" id="nickname"></input>
+		<input type="submit" value="Display">
+	</form>
+
+	<ul id="navlist">
+		<li><a href="/admin/people/">Everyone</a></li>
+		<li><a href="/admin/people/?filter=speakers">Speakers</a></li>
+		<li><a href="/admin/people/?filter=attendees">Attendees</a></li>
+		<li><a href="/admin/people/?filter=micro-sponsors"><del>Micro-sponsors</del></a></li>	
+		<li><a href="/admin/people/?filter=customers"><del>Customers</del></a></li>	
+	</ul>
+
+	<table>
+		<tr>
+			<th>#</th>
+			<th>Nickname</th>
+			<th>Name</th>
+			<th>Email</th>
+			<th>Profile</th>
+		</tr>
+	{% for person in people %}
+		<tr class="{% cycle odd,even %}">
+			<td>{{forloop.counter}}</td>
+			<td>{% if person.nickname %}<a href="/admin/person/{{person.nickname}}/">{{person.nickname}}</a>{% else %}Not set.{% endif %}</td>
+			<td>{{person.full_name}}</td>
+			<td><a href="/admin/person/{{person.other_email}}/">{{person.other_email}}</a></td>
+			<td><a href="/profile/{{person.nickname}}/">Edit</a></td>
+		</tr>
+	{% endfor %}
+	</table>
+	
+{% endblock %}
