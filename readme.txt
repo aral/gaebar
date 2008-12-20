@@ -147,6 +147,8 @@ You may want to restore data locally, on your development server, to test with r
 
 *** Tip: *** The datastore and history are kept in temporary folders such as (on OS X) /var/folders/bz/bzDU030xHXK-jKYLMXnTzk+++TI/-Tmp-/. Before you do a restore, run ./manage.py flush to find out which folder they're kept in. Once you have that, copy those files to a safe place. This way, you can easily restore them if they are erased without having to go through the lengthy restore process again.
 
+Also, realize that the datastore on the local SDK is _very_ slow. Launching the server with a large datastore will take a long time. Even doing a ./manage.py flush will take ages, and you can get the same result by simply deleting the datastore files from the temporary folder.
+
 
 C. Restore data to a staging app:
 ---------------------------------
