@@ -233,7 +233,7 @@ def index(request):
 		
 			# TODO: We need to store host information for backups with the backup
 			# so we know where to go to re-download stuff if any fail.
-			metadata_url = settings.REMOTE_URL + '/gaebar/metadata/' + urlquote(make_timestamp_from_safe_file_name(folder_name)) + '/' + urlquote(settings.SECRET_KEY) + '/'
+			metadata_url = request.get_host() + '/gaebar/metadata/' + urlquote(make_timestamp_from_safe_file_name(folder_name)) + '/' + urlquote(settings.SECRET_KEY) + '/'
 		
 			# e.g., details = ['backup', '2008', '09', '21', 'at', '10', '15', '47', '931862']
 			details = folder_name.split('_')
