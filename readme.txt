@@ -8,6 +8,14 @@ Copyright (c) 2009 Aral Balkan. http://aralbalkan.com
 Released under the GNU GPL v3 License. See license.txt for the full license or read it here:
 http://www.gnu.org/licenses/gpl-3.0-standalone.html
 
+Limitations
+===========
+
+Ancestor relationships are not supported. Expando properties are not supported.
+
+Quite simply, I don't use either of these features and haven't gotten my head around the whole ancestor thing at all. I'm going to get round to supporting these (and heck, it may just work, so give it a try).
+
+Feedback and patches on these limitations is always welcome! :)
 
 Installation
 ============
