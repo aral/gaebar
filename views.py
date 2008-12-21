@@ -74,6 +74,12 @@ for modelstuple in settings.GAEBAR_MODELS:
 		__import__(model_package, globals(), locals(), model_classes)
 
 
+# Are we running on the local development server?
+IS_DEV = False
+if 'SERVER_SOFTWARE' in os.environ:
+	IS_DEV = os.environ['SERVER_SOFTWARE'].startswith('Dev')
+
+
 ######################################################################
 #
 #	Constants and other globals
@@ -87,7 +93,7 @@ for modelstuple in settings.GAEBAR_MODELS:
 	(The dev size is kept low so we can see shards in action without 
 	populating the local datastore with too many entries.)
 """
-#MAX_SHARD_SIZE = 2000 if settings.IS_DEV else 300000
+#MAX_SHARD_SIZE = 2000 if IS_DEV else 300000
 MAX_SHARD_SIZE = 300000
 
 """
@@ -843,7 +849,7 @@ def backup_local_download_remote_backup(request):
 	# one server to the other. However, it could be used for that later on.)
 	
 	# TODO: Make this generic - not everyone will have IS_DEV in their settings. 
-	if not settings.IS_DEV:
+	if not IS_DEV:
 		return HttpResponseForbidden('Please run locally.')
 
 
