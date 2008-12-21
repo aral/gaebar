@@ -343,7 +343,7 @@ def backup_start(request):
 	code_shard.backup = backup
 	code = code_shard.code
 		
-	code = u'"""\n\tDatastore backup for %s\n\tStarted on: %s.\n"""\n\n' % (settings.HOST_URL, get_date_string())
+	code = u'"""\n\tDatastore backup for %s\n\tStarted on: %s.\n"""\n\n' % (server_name, get_date_string())
 	code = add_code_shard_imports(code)
 
 	code_shard.code = code
