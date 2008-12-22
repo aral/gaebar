@@ -74,11 +74,6 @@ for modelstuple in settings.GAEBAR_MODELS:
 		__import__(model_package, globals(), locals(), model_classes)
 
 
-# Are we running on the local development server?
-IS_DEV = False
-if 'SERVER_SOFTWARE' in os.environ:
-	IS_DEV = os.environ['SERVER_SOFTWARE'].startswith('Dev')
-
 
 ######################################################################
 #
@@ -119,6 +114,53 @@ backup_update_key_rc = re.compile(backup_update_key)
 """
 timestamp_regexp = r'^(\d\d\d\d)-(\d\d)-(\d\d)\s(\d\d):(\d\d):(\d\d)\.(\d*?)$'
 timestamp_regexp_compiled = re.compile(timestamp_regexp)
+
+"""
+	App.yaml app name regexp
+"""
+app_name_from_app_yaml_regexp = r'^application: (.*?)\n'
+app_name_from_app_yaml_regexp_compiled = re.compile(app_name_from_app_yaml_regexp)
+
+
+"""
+	Other globals
+"""
+
+# Are we running on the local development server?
+IS_DEV = False
+if 'SERVER_SOFTWARE' in os.environ:
+	IS_DEV = os.environ['SERVER_SOFTWARE'].startswith('Dev')
+
+def get_app_name(app_yaml_path):
+	"""
+	Reads in app.yaml and gets the app name. 
+	
+	"""
+	try:
+		app_yaml = open(app_yaml_path).read()
+	except:
+		return False
+	
+	application_name = app_name_from_app_yaml_regexp_compiled.match(app_yaml).groups()[0]
+	return application_name
+
+
+# Get the app name
+application_name = False
+APP_ENGINE_HELPER_APP_YAML = 'app.yaml'
+APP_ENGINE_PATCH_APP_YAML = '../../app.yaml'
+if os.path.exists(APP_ENGINE_HELPER_APP_YAML):
+	application_name = get_app_name(APP_ENGINE_HELPER_APP_YAML)
+elif os.path.exists(APP_ENGINE_PATCH_APP_YAML):
+	application_name = get_app_name(APP_ENGINE_PATCH_APP_YAML)
+else:
+	# Error: app.yaml not found in either of the places it should be
+	logging.error('Could not find app.yaml to get app name. Restores will not work.')
+
+logging.info('Application name: ')
+logging.info(application_name)
+
+
 
 ######################################################################
 #
@@ -199,6 +241,9 @@ def index(request):
 		context['complete'] = True
 		
 	BACKUPS_FOLDER = settings.GAEBAR_BACKUPS_FOLDER
+	
+	# Test, remote backups folder
+	BACKUPS_FOLDER = 'gaebar/backups/'
 	
 	current_host = request.get_host()
 
@@ -507,7 +552,7 @@ def backup_rows(request):
 
 		# key_repr_safe = backup_existing_key_hack_rc.sub(r'long(\1)', key_repr)
 		
-		code += u'def row_%d(p):\n' % backup.num_rows
+		code += u'def row_%d(p, app_name):\n' % backup.num_rows
 		
 		# Generate code: Check pass number (p)
 		code += u'\tif p == 0:\n'
@@ -1195,7 +1240,7 @@ def backup_restore_row(request):
 	row_function = getattr(shard, row_function_name) #eval(row_path)
 	
 	# Run the row
-	row_function(pass_number)
+	row_function(pass_number, application_name)
 	
 	# Check if the restore is over.
 	if row_index == backup['num_rows'] - 1:
@@ -1335,6 +1380,9 @@ def backup_model(backup, context):
 
 def close_code_shard(code_shard, backup, code=None):
 	"""Closes a code shard."""
+
+	# Parameterize the application name in the code
+	code = parameterize_app_name(code)
 
 	# Save the old one and mark it as inactive
 	code_shard.active = False
@@ -1495,6 +1543,16 @@ def update_keys(code):
 	
 	"""
 	code = backup_update_key_rc.sub(r"'id\1',", code)
+	return code
+	
+def parameterize_app_name(code):
+	"""
+	During backup, replaces any references to the app name with a variable. When
+	restoring, the app name of the current app is passed to the restore function.
+	This lets us restore the data to any application and thus create staging servers.
+	
+	"""
+	code = code.replace("_app=u'%s'" % application_name, "_app=app_name")
 	return code
 
 def update_code_shard_metadata(code_shard, backup, current_model):
