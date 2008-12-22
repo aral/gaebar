@@ -883,6 +883,11 @@ def backup_local_download_remote_backup(request):
 	
 	if 'url' in request.REQUEST:
 		host_url = request.REQUEST['url']
+		
+		# Make sure host URL starts with http:// protocol.
+		if not host_url[0:7] == 'http://':
+			host_url = 'http://' + host_url
+		
 		logging.info('Host url: ' + host_url)
 	else:
 		return HttpResponse('Missing URL in local download of remote backup.')
