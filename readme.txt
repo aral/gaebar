@@ -9,16 +9,6 @@ Released under the GNU GPL v3 License. See license.txt for the full license or r
 http://www.gnu.org/licenses/gpl-3.0-standalone.html
 
 
-
-Limitations
-===========
-
-Ancestor relationships are not supported. Quite frankly, I haven't gotten my head around the whole ancestor thing at all. I'm going to look into it again today to see if I can't implement it.
-
-Feedback and patches are always welcome! :)
-
-
-
 Installation
 ============
 
@@ -54,7 +44,6 @@ urlpatterns = patterns('',
   static_dir: gaebar/static
 
 
-
 Settings
 ========
 
@@ -88,7 +77,6 @@ GAEBAR_MODELS = (
 )
 
 
-
 Testing Gaebar locally:
 =======================
 
@@ -110,7 +98,6 @@ GAEBAR_SERVERS = {
 Populate your datastore with some sample data then hit your faux remote server (e.g., http://localhost:8080/gaebar/) and start a backup. It should back up the datastore and then hit the local server (port 8000) to download the backup. You will find your backup files in the gaebar/backups folder (as specified by settings.GAEBAR_BACKUPS_FOLDER).
 
 
-
 How it works
 ============
 
@@ -123,7 +110,6 @@ By default, Gaebar backs up 5 rows at a time to avoid the short term CPU and 10-
 Gaebar only works with Django applications on Google App Engine. Both appenginepatch and App Engine Helper are supported.
 
 Please test Gaebar out with sample data locally before testing it on your live app. We cannot be held responsible for any data loss or other damage that may arise from your use of Gaebar.
-
 
 
 Usage
@@ -183,9 +169,8 @@ If something happens to your main application, you can restore from a backup.
 NOTE: When you're deploying, remember that you will also deploy any backups that are in the gaebar/backups folder. It's a good idea to only deploy with the backup you want to restore to reduce the number of files in your app so as not to hit the 1,000 file limit. You cannot harm the app by moving or deleting backup folders.
 
 
-
 Known Issues
 ============
 
-* Ancestor relationships are untested/unsupported.
+None.
 
