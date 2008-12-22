@@ -220,11 +220,18 @@ def index(request):
 	if 'complete' in request.REQUEST:
 		context['complete'] = True
 		
-	BACKUPS_FOLDER = settings.GAEBAR_BACKUPS_FOLDER
+	# Default backups folder -- will work everywhere except locally
+	# on app-engine-patch projects (again, because the working folder is
+	# common/appenginepatch/ instead of the app root.)
+	backups_folder = 'gaebar/backups/'
 	
-	# Test, remote backups folder
-	BACKUPS_FOLDER = 'gaebar/backups/'
-	
+	# App engine patch?
+	if not os.path.exists('gaebar'):
+		# Yep
+		backups_folder = '../../gaebar/backups/'
+
+	logging.info('**** Backups folder is ' + backups_folder)
+
 	current_host = request.get_host()
 
 	# Make sure that the current host isn't the local server (so that user doesn't
@@ -239,13 +246,14 @@ def index(request):
 		for server in servers:
 			url = servers[server]
 			if current_host in url:
-				current_host = server		
+				current_host = server	
+	
 	
 		context['current_host'] = current_host
 	
 	
-	folder_names = [x for x,y,z in os.walk(BACKUPS_FOLDER)]
-	folders = [z for x,y,z in os.walk(BACKUPS_FOLDER)]
+	folder_names = [x for x,y,z in os.walk(backups_folder)]
+	folders = [z for x,y,z in os.walk(backups_folder)]
 
 	folder_info = []
 	if (len(folders) > 1):
