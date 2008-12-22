@@ -118,7 +118,10 @@ timestamp_regexp_compiled = re.compile(timestamp_regexp)
 """
 	App.yaml app name regexp
 """
-app_name_from_app_yaml_regexp = r'^application: (.*?)\n'
+# Note: Not searching for ^application since the default app.yaml that comes
+# in appenginepatch has a few invisible characters before the application and fails
+# the match.
+app_name_from_app_yaml_regexp = r'application: (.*?)\n'
 app_name_from_app_yaml_regexp_compiled = re.compile(app_name_from_app_yaml_regexp)
 
 
@@ -141,7 +144,7 @@ def get_app_name(app_yaml_path):
 	except:
 		return False
 	
-	application_name = app_name_from_app_yaml_regexp_compiled.match(app_yaml).groups()[0]
+	application_name = app_name_from_app_yaml_regexp_compiled.findall(app_yaml)[0]
 	return application_name
 
 
