@@ -11,11 +11,11 @@ http://www.gnu.org/licenses/gpl-3.0-standalone.html
 Limitations
 ===========
 
-Ancestor relationships are not supported. Expando properties are not supported.
+Ancestor relationships are not supported. Quite frankly, I haven't gotten my head around the whole ancestor thing at all. I'm going to look into it again today to see if I can't implement it.
 
-Quite simply, I don't use either of these features and haven't gotten my head around the whole ancestor thing at all. I'm going to get round to supporting these (and heck, it may just work, so give it a try).
+Expandos are in the process of being implemented.
 
-Feedback and patches on these limitations is always welcome! :)
+Feedback and patches are always welcome! :)
 
 Installation
 ============
