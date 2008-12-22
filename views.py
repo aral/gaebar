@@ -628,6 +628,16 @@ def backup_rows(request):
 				value = repr(pickle.dumps(raw_value))
 				code += u'\t\t%s.%s = pickle.loads(%s)\n' % (row_name, field, value)
 
+		# Does this row belong to an Expando model?
+		if hasattr(row, '_dynamic_properties'):
+			# Expando row, add the dynamic properties.
+			logging.info('Expando row found, pickling dynamic properties...')
+			code += u'\t\t# Expando dynamic properties:\n'
+			dynamic_properties = row._dynamic_properties
+			for dynamic_property in dynamic_properties:
+				value = repr(pickle.dumps(dynamic_properties[dynamic_property]))
+				code += u'\t\t%s.%s = pickle.loads(%s)\n' % (row_name, dynamic_property, value)
+
 		# Put the new row
 		code += u'\t\t%s.put()\n' % row_name
 		
