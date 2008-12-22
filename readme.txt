@@ -53,6 +53,11 @@ Before you start using Gaebar, you have to configure it by added a few lines to 
 # Gaebar
 #
 
+# I'd much rather have this in app.yaml and DRY but App Engine doesn't seem to allow 
+# you to read in app.yaml from the deployment environment. You must specify the app
+# name both here and in app.yaml.
+GAEBAR_APPLICATION_NAME = 'gaebar-gaed'
+
 GAEBAR_LOCAL_URL = 'http://localhost:8000'
 
 GAEBAR_BACKUPS_FOLDER = '/Users/aral/projects/gaebar-gaed/gaebar/backups/'
