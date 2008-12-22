@@ -134,39 +134,9 @@ IS_DEV = False
 if 'SERVER_SOFTWARE' in os.environ:
 	IS_DEV = os.environ['SERVER_SOFTWARE'].startswith('Dev')
 
-######################################################################
-#
-# In case we find a way to read app.yaml from 
-# the deployment environment in the future:
-#
-######################################################################
-# def get_app_name(app_yaml_path):
-# 	"""
-# 	Reads in app.yaml and gets the app name. 
-# 	
-# 	"""
-# 	try:
-# 		app_yaml = open(app_yaml_path).read()
-# 	except:
-# 		return False
-# 	
-# 	application_name = app_name_from_app_yaml_regexp_compiled.findall(app_yaml)[0]
-# 	return application_name
-# 
-# 
-# # Get the app name
-# application_name = False
-# APP_ENGINE_HELPER_APP_YAML = 'app.yaml'
-# APP_ENGINE_PATCH_APP_YAML = '../../app.yaml'
-# if os.path.exists(APP_ENGINE_HELPER_APP_YAML):
-# 	application_name = get_app_name(APP_ENGINE_HELPER_APP_YAML)
-# elif os.path.exists(APP_ENGINE_PATCH_APP_YAML):
-# 	application_name = get_app_name(APP_ENGINE_PATCH_APP_YAML)
-# else:
-# 	# Error: app.yaml not found in either of the places it should be
-# 	logging.error('Could not find app.yaml to get app name. Restores will not work.')
-
-application_name = settings.GAEBAR_APPLICATION_NAME
+# Get the application name. Many thanks to yejun for showing me  
+# how to get the application id on the App Engine Google Group.
+application_name = os.environ.get('APPLICATION_ID') 
 
 logging.info('Application name: ')
 logging.info(application_name)

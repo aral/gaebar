@@ -53,11 +53,6 @@ Before you start using Gaebar, you have to configure it by added a few lines to 
 # Gaebar
 #
 
-# I'd much rather have this in app.yaml and DRY but App Engine doesn't seem to allow 
-# you to read in app.yaml from the deployment environment. You must specify the app
-# name both here and in app.yaml.
-GAEBAR_APPLICATION_NAME = 'gaebar-gaed'
-
 GAEBAR_LOCAL_URL = 'http://localhost:8000'
 
 GAEBAR_BACKUPS_FOLDER = '/Users/aral/projects/gaebar-gaed/gaebar/backups/'
@@ -159,7 +154,7 @@ C. Restore data to a staging app:
 
 Although Google App Engine gives you basic versioning control during deployment, it doesn't provide a staging environment where you can test out updates with real data on the deployment server without your end users seeing.
 
-With Gaebar, you can set up your own staging application. Simply set up a separate application, clone your app folder (changing the app name), and deploy. Then, backup your data from your main app. And deploy again to upload your backups to the staging app. On the staging app, restore the data and you can test your latest changes with real data before exposing those changes to your users.
+With Gaebar, you can set up your own staging application. Simply set up a separate application, change the app name in app.yaml, and deploy. Then, backup your data from your main app. Copy the backup to the staging application and deploy the staging app again to upload your backups to the staging app. On the staging app, restore the data and you can test your latest changes with real data before exposing those changes to your users.
 
 NOTE: When you're deploying, remember that you will also deploy any backups that are in the gaebar/backups folder. It's a good idea to only deploy with the backup you want to restore to reduce the number of files in your app so as not to hit the 1,000 file limit. You cannot harm the app by moving or deleting backup folders.
 
