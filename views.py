@@ -557,8 +557,21 @@ def backup_rows(request):
 
 		##################################################################################
 		
+		# Does this entity have a parent?
+		parent_code = ''
+		if row.parent():
+			# Entity has a parent, maintain the ancestor relationship.
+			parent = row.parent()
+			parent_key = row.parent().key().__repr__()
+			parent_key = update_keys(parent_key)
+			
+			logging.info(parent_key)
+			
+			parent_code = ', parent=%s' % parent_key
+			logging.info('Parent key found, adding %s ' % parent_key)
+		
 		# Generate code: Create the new entity
-		code += u'\t\t%s = %s(key_name="%s")\n' % (row_name, current_model, key_name)
+		code += u'\t\t%s = %s(key_name="%s"%s)\n' % (row_name, current_model, key_name, parent_code)
 
 			
 		# Store fields with references separately as these will be 
