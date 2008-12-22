@@ -8,14 +8,16 @@ Copyright (c) 2009 Aral Balkan. http://aralbalkan.com
 Released under the GNU GPL v3 License. See license.txt for the full license or read it here:
 http://www.gnu.org/licenses/gpl-3.0-standalone.html
 
+
+
 Limitations
 ===========
 
 Ancestor relationships are not supported. Quite frankly, I haven't gotten my head around the whole ancestor thing at all. I'm going to look into it again today to see if I can't implement it.
 
-Expandos are in the process of being implemented.
-
 Feedback and patches are always welcome! :)
+
+
 
 Installation
 ============
@@ -52,6 +54,7 @@ urlpatterns = patterns('',
   static_dir: gaebar/static
 
 
+
 Settings
 ========
 
@@ -60,9 +63,10 @@ Before you start using Gaebar, you have to configure it by added a few lines to 
 #
 # Gaebar
 #
+
 GAEBAR_LOCAL_URL = 'http://localhost:8000'
 
-GAEBAR_BACKUPS_FOLDER = '/Users/aral/projects/headconference/trunk/gaebar/backups/'
+GAEBAR_BACKUPS_FOLDER = '/Users/aral/projects/gaebar-gaed/gaebar/backups/'
 
 GAEBAR_SECRET_KEY = 'change_this_to_something_random'
 
@@ -73,14 +77,14 @@ GAEBAR_SERVERS = {
 }
 
 GAEBAR_MODELS = (
-	(
-		'core.models', 
-		(u'GeoPlanetLocation', u'Hub', u'Person', u'Invitation', u'Email', u'Email2', u'GoogleAccount', u'File', u'Tag', u'Group', u'MicroSponsorship', u'Event', u'Purchase', u'CountryCounts',),
-	),
-	(
-		'lib.counter', 
-		(u'Counter',),
-	),
+     (
+          'app1.models', 
+          (u'Profile', u'GoogleAccount', u'AllOtherTypes', u'PlasticMan'),
+     ),
+     (
+          'app2.models', 
+          (u'Simple',),
+     ),
 )
 
 
@@ -106,6 +110,7 @@ GAEBAR_SERVERS = {
 Populate your datastore with some sample data then hit your faux remote server (e.g., http://localhost:8080/gaebar/) and start a backup. It should back up the datastore and then hit the local server (port 8000) to download the backup. You will find your backup files in the gaebar/backups folder (as specified by settings.GAEBAR_BACKUPS_FOLDER).
 
 
+
 How it works
 ============
 
@@ -113,7 +118,7 @@ Gaebar backs up the data in your datastore to Python code. It restores your data
 
 Since a backup is a long running process, and since Google App Engine doesn't support long-running processes, Gaebar fakes a long running process by breaking up the backup and restore processes into bite-sized chunks and repeatedly hitting the server via Ajax calls. 
 
-By default, Gaebar backs up 5 rows at a time to avoid the short term CPU and 10-second call duration quotas and splits the generated code into code shards of under 300KB to avoid the 1MB limit on objects. You can change these defaults in the views.py file if your app has higher quotas and you want faster backups and restores. 
+By default, Gaebar backs up 5 rows at a time to avoid the short term CPU and 10-second call duration quotas and splits the generated code into code shards of approx. 300KB to avoid the 1MB limit on objects. You can change these defaults in the views.py file if your app has higher quotas and you want faster backups and restores. 
 
 Gaebar only works with Django applications on Google App Engine. Both appenginepatch and App Engine Helper are supported.
 
@@ -178,9 +183,9 @@ If something happens to your main application, you can restore from a backup.
 NOTE: When you're deploying, remember that you will also deploy any backups that are in the gaebar/backups folder. It's a good idea to only deploy with the backup you want to restore to reduce the number of files in your app so as not to hit the 1,000 file limit. You cannot harm the app by moving or deleting backup folders.
 
 
+
 Known Issues
 ============
 
-* Running restore twice on the same data store may not work. TODO: Look into how we can make this work *and* maintain support for both regular keys and keys with key names.
-
+* Ancestor relationships are untested/unsupported.
 
