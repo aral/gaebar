@@ -16,7 +16,6 @@ Installation
 
 This is required in order to override some of the local dev server restrictions to allow automatic downloads of backups. Gaebar will not work unless you implement this patch.
 
-
 2. Unzip Gaebar.zip to a folder called gaebar/ off the root of your Django project. You *must* place Gaebar at this location for the app to work properly.
 
 
