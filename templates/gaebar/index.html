@@ -113,7 +113,20 @@
 			width:350px;
 			background:#FFFFFF;
 			border:2px solid #cecece;
-			z-index:3;
+			z-index:4;
+			padding:12px;
+			font-size:13px;
+		}
+
+		#confirmCancelRestoreDialog {
+			display:none;
+			position:fixed;
+			_position:absolute; /* hack for internet explorer 6*/
+			height:110px;
+			width:350px;
+			background:#FFFFFF;
+			border:2px solid #cecece;
+			z-index:4;
 			padding:12px;
 			font-size:13px;
 		}
@@ -126,7 +139,7 @@
 			width:350px;
 			background:#FFFFFF;
 			border:2px solid #cecece;
-			z-index:3;
+			z-index:5;
 			padding:12px;
 			font-size:13px;
 		}
@@ -139,7 +152,7 @@
 			width:350px;
 			background:#FFFFFF;
 			border:2px solid #cecece;
-			z-index:3;
+			z-index:5;
 			padding:12px;
 			font-size:13px;
 		}
@@ -318,7 +331,7 @@
 
 
 		function backup_progress_handler(data, textStatus) {
-			
+
 			// Reset the number of tries (in case a call failed earlier)
 			numTries = 0;
 			
@@ -426,8 +439,12 @@
 						
 			if (data.complete) {
 
+				// Hide the cancel dialog in case it's showing.
+				removeConfirmCancelRestoreDialog();
+
 				// The restore is complete.	
 				showDialog("#restoreCompleteDialog");
+				
 								
 			} else {
 
@@ -546,21 +563,40 @@
 		function confirmCancel(){
 			showDialog("#confirmCancelDialog");
 		}
+		
+		function confirmCancelRestore(){
+			showDialog("#confirmCancelRestoreDialog");
+		}
 
 		function cancelBackup(){
 			// Remove the popups
 			removeConfirmCancelDialog();	
 			$("#backupDialog").fadeOut("slow");
 			$("#modalShade").fadeOut("slow");
-			dialogStatus = 0;
 
 			backupCancelled = true;
 		}
+
+		function cancelRestore(){
+			// Remove the popups
+			removeConfirmCancelRestoreDialog();	
+			$("#restoreDialog").fadeOut("slow");
+			$("#modalShade").fadeOut("slow");
+
+			restoreCancelled = true;
+		}
+
 
 		function removeConfirmCancelDialog(){
 			$("#modalShade").css({"z-index": 1});
 			$("#confirmCancelDialog").fadeOut("slow");	
 		}
+
+		function removeConfirmCancelRestoreDialog(){
+			$("#modalShade").css({"z-index": 1});
+			$("#confirmCancelRestoreDialog").fadeOut("slow");	
+		}
+
 		
 		function restoreCompleteDialogOKButtonHandler(eventObj){
 			// Remove the restore complete and restore dialogs.
@@ -605,9 +641,13 @@
 			// Modal dialog event handlers
 			//
 
-			// Cancel backup link click handler
-			$("#cancelBackupLink").click(function(){
+			// Cancel backup button click handler
+			$("#cancelBackupButton").click(function(){
 				confirmCancel();
+			});
+
+			$("#cancelRestoreButton").click(function(){
+				confirmCancelRestore();
 			});
 
 			// Confirmation dialog events
@@ -617,6 +657,15 @@
 
 			$("#no").click(function(){
 				removeConfirmCancelDialog();
+			});
+
+			// Bah, refactoring is for wimps. OK, OK, I'll get round to it some day :)
+			$("#yes2").click(function(){
+				cancelRestore();
+			});
+
+			$("#no2").click(function(){
+				removeConfirmCancelRestoreDialog();
 			});
 			
 		});
@@ -700,7 +749,7 @@
 		<textarea id="debug"></textarea>
 		
 		<div class="controlsCentered">
-			<button id="cancelBackupLink">Cancel backup</a>
+			<button id="cancelBackupButton">Cancel backup</a>
 		</div>
 	</div>
 	
@@ -751,7 +800,16 @@
 		</ul>
 		
 		<div class="controlsCentered">
-			<button id="cancelBackupLink">Cancel restore</a>
+			<button id="cancelRestoreButton">Cancel restore</a>
+		</div>
+	</div>
+	
+	<div id="confirmCancelRestoreDialog" class="dialog">
+		<h1>Cancel the restore?</h1>
+		<p>Cancelling a restore will leave your datastore in a corrupted state. Are you sure that this is what you want to do?</p>
+		<div class="controlsCentered">
+			<button id="yes2">Yes, cancel it!</button>
+			<button id="no2">No, keep going!</button>
 		</div>
 	</div>
 
