@@ -1130,7 +1130,7 @@ def backup_restore_row(request):
 	row_index: The row index to back up next.
 	pass_number: Pass number (0 or 1), signifying the first/second pass.
 	
-	Uses the Django secret key for authorization instead of the
+	Uses the Gaebar secret key from settings for authorization instead of the
 	autorization decorator. Otherwise, auth would fail while in the middle of 
 	a restore when the reference for the Admin's google account is broken.
 	

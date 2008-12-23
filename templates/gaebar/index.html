@@ -98,7 +98,7 @@
 			position:fixed;
 			_position:absolute; /* hack for internet explorer 6*/
 			width:600px;
-			height:357px;
+			height:377px;
 			background:#FFFFFF;
 			border:2px solid #cecece;
 			z-index:2;
@@ -393,6 +393,8 @@
 					for (i = 0; i < data.all_models.length; i++) {
 						allModelsStr += data.all_models[i] + ', ';
 					}
+					// Remove last comma.
+					allModelsStr = allModelsStr.substr(0, allModelsStr.length-2)
 					$("#allModels").attr('value', allModelsStr);				
 						
 				}
@@ -438,12 +440,12 @@
 				
 				passStr = '';
 				if (Number(data.pass_number) == 0) {
-					passStr = 'First pass.'
+					passStr = 'First pass'
 				} else {
-					passStr = 'Second pass.'
+					passStr = 'Second pass'
 				}
-				
-				$("#passNumber").html(passStr);
+
+				$("#restorePassNumber").html(passStr);
 				
 				if (data.created_at){
 					created_at_bits = data.created_at.split(" ");
@@ -734,9 +736,10 @@
 		<h2>Progress details:</h2>
 		
 		<ul>
+			<li><strong><span id="restorePassNumber"></span></strong></li>
 			<li>Current model: <span id="lastModelRestored"></span></li>
 			<li>Current shard: <span id="restoreCurrentShard"></span> of <span id="restoreNumberOfShards"></span></li>
-			<li><span id="passNumber"></span> <span class="progressBar" id="restoreStatus">0%</span></li>			
+			<li><span class="progressBar" id="restoreStatus">0%</span></li>			
 			<li>Last row updated: <span id="lastRowRestored"></span> of <span id="restoreNumberOfRows"></span></li>
 		</ul>
 
