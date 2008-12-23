@@ -12,6 +12,9 @@ http://www.gnu.org/licenses/gpl-3.0-standalone.html
 Installation
 ============
 
+A. Release Zip
+--------------
+
 1. *IMPORTANT* Patch your dev_appserver.py as per the instructions here: http://aralbalkan.com/1440 (and please star issue 616 if you'd like Google to fix this so we can remove this step: http://code.google.com/p/googleappengine/issues/detail?id=616). 
 
 This is required in order to override some of the local dev server restrictions to allow automatic downloads of backups. Gaebar will not work unless you implement this patch.
@@ -41,6 +44,41 @@ urlpatterns = patterns('',
 # Static: Gaebar
 - url: /gaebar/static
   static_dir: gaebar/static
+
+
+B. From GitHub
+--------------
+
+You can install the latest Gaebar trunk into your projects from GitHub using Git.
+
+(a) If you're using Git for your main project
+---------------------------------------------
+
+Add Gaebar to your project as a submodule.
+
+TODO: Details.
+
+NOTE TO WINDOWS USERS:
+
+I've successfully tested this with msysgit 1.5.6.1. 
+
+However, msysgit 1.6.0.2 appears to have a problem with submodules (see http://icanhaz.com/msysgitsubmoduleerroron1602).
+
+You get the following error:
+
+$ git submodule update
+error: Entry 'readme.txt' would be overwritten by merge. Cannot merge.
+Unable to checkout 'de51abeaa23173bbafe2313fd26d27fd6e032c31' in submodule path 'gaebar'
+
+The workaround is to use msysgit 1.5.6.1 (the currently featured download on msysgit).
+
+
+(b) If you're not using Git for your main project
+-------------------------------------------------
+
+Clone Gaebar. 
+
+TODO: Details.
 
 
 Settings
