@@ -60,7 +60,7 @@ TODO: Details.
 
 NOTE TO WINDOWS USERS:
 
-I've successfully tested this with msysgit 1.5.6.1. 
+I've successfully tested this with msysgit 1.5.6.1 (http://code.google.com/p/msysgit/). 
 
 However, msysgit 1.6.0.2 appears to have a problem with submodules (see http://icanhaz.com/msysgitsubmoduleerroron1602).
 
