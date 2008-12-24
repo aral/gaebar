@@ -204,6 +204,18 @@ If something happens to your main application, you can restore from a backup.
 NOTE: When you're deploying, remember that you will also deploy any backups that are in the gaebar/backups folder. It's a good idea to only deploy with the backup you want to restore to reduce the number of files in your app so as not to hit the 1,000 file limit. You cannot harm the app by moving or deleting backup folders.
 
 
+A Note on restoring and existing data
+=====================================
+
+When restoring a row, Gaebar checks to see if the original key for the row that was backed up exists in the datastore. If it does, it removes it. 
+
+This means that as long as you are restoring to the same datastore you backed up from or to an empty datastore, the datastore will not contain any duplicate entries after the restore process is complete.
+
+To be extra safe, however, you may want to empty your existing datastore before restoring. 
+
+The next release of Gaebar will have a utility that does this for you.  
+
+
 Known Issues
 ============
 
