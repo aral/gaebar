@@ -603,9 +603,18 @@ def backup_rows(request):
 			parent_code = ', parent=%s' % parent_key
 			logging.info('Parent key found, adding %s ' % parent_key)
 		
-		# Generate code: Create the new entity
-		code += u'\t\t%s = %s(key_name="%s"%s)\n' % (row_name, current_model, key_name, parent_code)
+		
+		# Create all of the properties first so that we can include them 
+		# in the constructor (this is to support required properties which _must_ be 
+		# included in the constructor). Thanks to Jonathan and Thomas for pointing this
+		# out to me (see http://aralbalkan.com/1784#comment-201846)
+		#
+		# TODO: What about reference properties... how do we get past the chicken and egg?
+		#
+		# TODO
 
+		# Property population code
+		properties_code = ''
 			
 		# Store fields with references separately as these will be 
 		# handled in pass 2 of the restore process (so that we can guarantee
@@ -632,9 +641,9 @@ def backup_rows(request):
 				#
 				# (Unfortunately, this will also catch other db errors as there
 				# isn't a specific sub-class for ReferencePropertyFailedToBeResolvedError).
-				code += u"\t\t# Warning: Datastore error\n"
+				# code += u"\t\t# Warning: Datastore error\n"
 				datastore_error_message = u"%s: %s\n\n" % sys.exc_info()[:2]
-				code += u"\t\t# %s" % datastore_error_message
+				# code += u"\t\t# %s" % datastore_error_message
 				context['datastore_error'] = True
 				context['datastore_error_message'] = "Ignoring datastore error: %s" % datastore_error_message
 				
@@ -672,7 +681,17 @@ def backup_rows(request):
 			if not stored:	
 				# Pickle and store (not a reference, list of keys, etc.)
 				value = repr(pickle.dumps(raw_value))
-				code += u'\t\t%s.%s = pickle.loads(%s)\n' % (row_name, field, value)
+				if properties_code == '':
+					properties_code = ', '
+				properties_code += u'%s = pickle.loads(%s), ' % (field, value)
+
+
+		# OK, all properties are ready, write out the row's constructor.
+		if not properties_code == '':
+			# Remove the trailing comma and space.
+			properties_code = properties_code[:-2]
+		code += u'\t\t%s = %s(key_name="%s"%s%s)\n' % (row_name, current_model, key_name, properties_code, parent_code)
+
 
 		# Does this row belong to an Expando model?
 		if hasattr(row, '_dynamic_properties'):
