@@ -540,15 +540,12 @@ def backup_rows(request):
 
 		# key_repr_safe = backup_existing_key_hack_rc.sub(r'long(\1)', key_repr)
 		
-		code += u'def row_%d(p, app_name):\n' % backup.num_rows
-		
-		# Generate code: Check pass number (p)
-		code += u'\tif p == 0:\n'
-		
+		code += u'def row_%d(app_name):\n' % backup.num_rows
+				
 		# Generate code: Check if entity already exists and delete it if it does
-		code += u'\t\texisting_entity = %s.get(%s)\n' % (current_model, key_repr)
-		code += u'\t\tif existing_entity:\n'
-		code += u'\t\t\texisting_entity.delete()\n'
+		code += u'\texisting_entity = %s.get(%s)\n' % (current_model, key_repr)
+		code += u'\tif existing_entity:\n'
+		code += u'\t\texisting_entity.delete()\n'
 		
 		# code += u'\t# Key id = ' + unicode(key_id) + '\n'
 		# code += u'\t# Parent = ' + unicode(row.parent()) + '\n'
@@ -598,28 +595,24 @@ def backup_rows(request):
 			parent_key = row.parent().key().__repr__()
 			parent_key = update_keys(parent_key)
 			
-			logging.info(parent_key)
+			# logging.info(parent_key)
 			
 			parent_code = ', parent=%s' % parent_key
-			logging.info('Parent key found, adding %s ' % parent_key)
+			# logging.info('Parent key found, adding %s ' % parent_key)
 		
 		
 		# Create all of the properties first so that we can include them 
 		# in the constructor (this is to support required properties which _must_ be 
-		# included in the constructor). Thanks to Jonathan and Thomas for pointing this
-		# out to me (see http://aralbalkan.com/1784#comment-201846)
-		#
-		# TODO: What about reference properties... how do we get past the chicken and egg?
-		#
-		# TODO
+		# included in the constructor). Thanks to Jonathan and Thomas for reporting this
+		# to me (see http://aralbalkan.com/1784#comment-201846).
 
 		# Property population code
-		properties_code = ''
+		properties_code = ', '
 			
 		# Store fields with references separately as these will be 
 		# handled in pass 2 of the restore process (so that we can guarantee
 		# that all records exist in the datastore before they are referenced.)
-		reference_fields_code = ''
+		reference_fields_code = ', '
 		
 		# Populate the fields
 		for field in fields:
@@ -665,7 +658,7 @@ def backup_rows(request):
 				# datastore, it will be rewritten while writing out the references section.
 				#
 				reference_key = raw_value.key().__repr__()
-				reference_fields_code += u'\t\t%s.%s = %s.get(%s)\n' % (row_name, field, raw_value_type_name, reference_key)		
+				reference_fields_code += u'%s = %s.get(%s), ' % (field, raw_value_type_name, reference_key)		
 				stored = True
 				
 			elif raw_value_type_name == 'list':
@@ -675,65 +668,39 @@ def backup_rows(request):
 						# ListPropert(db.Key) - list of keys (references) 
 						# Rewrite the code to use the new ids if they contain numeric ids.	
 						list_code = raw_value.__repr__()
-						reference_fields_code += '\t\t%s.%s = %s\n' % (row_name, field, list_code)
+						reference_fields_code += '%s = %s, ' % (field, list_code)
 						stored = True		
 
 			if not stored:	
 				# Pickle and store (not a reference, list of keys, etc.)
 				value = repr(pickle.dumps(raw_value))
-				if properties_code == '':
-					properties_code = ', '
 				properties_code += u'%s = pickle.loads(%s), ' % (field, value)
 
+		# Update any old datastore numeric keys in reference properties to 
+		# their key_name equivalents for the new datastore.
+		reference_fields_code = update_keys(reference_fields_code)			
 
-		# OK, all properties are ready, write out the row's constructor.
-		if not properties_code == '':
-			# Remove the trailing comma and space.
-			properties_code = properties_code[:-2]
-		code += u'\t\t%s = %s(key_name="%s"%s%s)\n' % (row_name, current_model, key_name, properties_code, parent_code)
+		# Remove the trailing comma and space from the properties and reference field code strings.
+		properties_code = properties_code[:-2]
+		reference_fields_code = reference_fields_code[:-2]
 
+		# OK, all properties are ready, write out the row's constructor to create the row.
+		code += u'\t%s = %s(key_name="%s"%s%s%s)\n' % (row_name, current_model, key_name, properties_code, reference_fields_code, parent_code)
 
-		# Does this row belong to an Expando model?
+		# Does this row belong to an Expando model? (It's OK to put Expoando properties after the 
+		# constructor as they cannot be required.)
 		if hasattr(row, '_dynamic_properties'):
 			# Expando row, add the dynamic properties.
 			logging.info('Expando row found, pickling dynamic properties...')
-			code += u'\t\t# Expando dynamic properties:\n'
+			code += u'\t# Expando dynamic properties:\n'
 			dynamic_properties = row._dynamic_properties
 			for dynamic_property in dynamic_properties:
 				value = repr(pickle.dumps(dynamic_properties[dynamic_property]))
-				code += u'\t\t%s.%s = pickle.loads(%s)\n' % (row_name, dynamic_property, value)
+				code += u'\t%s.%s = pickle.loads(%s)\n' % (row_name, dynamic_property, value)
 
 		# Put the new row
-		code += u'\t\t%s.put()\n' % row_name
-		
-		# Marks start of the section to be run on Pass 2 of the restore process.
-		code += u'\telse:\n'
-		
-		# If there are reference fields, add them on too:
-		if reference_fields_code == '':
-			# No reference fields
-			code += '\t\tpass\n\n'
-		else:
-			# Add the reference fields
-			reference_fields_section = ''
-			reference_fields_section += u'\t\t%s = %s.get(%s)\n' % (row_name, current_model, key_repr)
-			reference_fields_section += reference_fields_code
-			
-			##################################################################################
-			# Update any numeric keys for the old datastore to their 
-			# key_name equivalents for the new datastore.
-			#
-			# Re-enabling as part of revert to r.955.
-			##################################################################################
-			
-			reference_fields_section = update_keys(reference_fields_section)
-			
-			##################################################################################
-			
-			reference_fields_section += u'\t\t%s.put()\n\n' % row_name
-			
-			code += reference_fields_section
-		
+		code += u'\t%s.put()\n\n' % row_name
+				
 		# Update the index counter for this model
 		counter += 1
 		
