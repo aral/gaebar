@@ -658,7 +658,7 @@ def backup_rows(request):
 				# datastore, it will be rewritten while writing out the references section.
 				#
 				reference_key = raw_value.key().__repr__()
-				reference_fields_code += u'%s = %s, ' % (field, reference_key)		
+				reference_fields_code += u'%s=%s, ' % (field, reference_key)		
 				stored = True
 				
 			elif raw_value_type_name == 'list':
@@ -668,13 +668,13 @@ def backup_rows(request):
 						# ListPropert(db.Key) - list of keys (references) 
 						# Rewrite the code to use the new ids if they contain numeric ids.	
 						list_code = raw_value.__repr__()
-						reference_fields_code += '%s = %s, ' % (field, list_code)
+						reference_fields_code += '%s=%s, ' % (field, list_code)
 						stored = True		
 
 			if not stored:	
 				# Pickle and store (not a reference, list of keys, etc.)
 				value = repr(pickle.dumps(raw_value))
-				properties_code += u'%s = pickle.loads(%s), ' % (field, value)
+				properties_code += u'%s=pickle.loads(%s), ' % (field, value)
 
 		# Update any old datastore numeric keys in reference properties to 
 		# their key_name equivalents for the new datastore.
