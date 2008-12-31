@@ -233,5 +233,27 @@ Look in the readme files in each project for instructions on how to set up and t
 Known Issues
 ============
 
-None.
+1. Required fields in models result in an exception. I am looking into fixing this now.
+
+Original bug report from Jonathan Ricketson follows:
+
+The problem is that my model class has a required field, and the app_engine validates the model on construction, not saving:
+
+I get an error like:
+Traceback (most recent call last):
+File “../common/zip-packages/django.zip/django/core/handlers/base.py”, line 86, in get_response
+File “../gaebar/views.py”, line 1236, in backup_restore_row
+row_function(pass_number, application_name)
+File “../gaebar/backups/backup_2008_12_31_at_11_23_33_529775/shard0.py”, line 15, in row_0
+account_0 = Account(key_name=”id801″)
+File “/opt/google_appengine.117/google/appengine/ext/db/__init__.py”, line 587, in __init__
+prop.__set__(self, value)
+File “/opt/google_appengine.117/google/appengine/ext/db/__init__.py”, line 387, in __set__
+value = self.validate(value)
+File “/opt/google_appengine.117/google/appengine/ext/db/__init__.py”, line 2100, in validate
+value = super(FloatProperty, self).validate(value)
+File “/opt/google_appengine.117/google/appengine/ext/db/__init__.py”, line 414, in validate
+raise BadValueError(’Property %s is required’ % self.name)
+BadValueError: Property interestRate is required
+
 
