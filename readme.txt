@@ -51,6 +51,12 @@ urlpatterns = patterns('',
 - url: /gaebar/static
   static_dir: gaebar/static
 
+6. If you are declaring your indices manually, add the following to your index.yaml file (or run Gaebar locally in the dev server so that the index is created for you automatically):
+
+- kind: GaebarCodeShard
+properties:
+- name: backup
+- name: created_at
 
 B. From GitHub
 --------------
