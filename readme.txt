@@ -17,8 +17,8 @@ Installation
 This is required in order to override some of the local dev server restrictions to allow automatic downloads of backups. Gaebar will not work unless you implement this patch.
 
 
-A. From an archieve.
---------------------
+A. From an archive.
+-------------------
 
 You can get a .zip or .tar of Gaebar from:
 http://github.com/aral/gaebar/tree/master
@@ -215,11 +215,11 @@ You can test Gaebar locally to make sure that it works on your system by using o
 
 The gaebar-gaed test app is built on Google App Engine Django (also known as Google App Engine Helper). It contains the Gaebar functional test suite. You can get it from:
 
-http://github.com/aral/gaebar-gaed/tree
+http://github.com/aral/gaebar-gaed/tree/master
 
 The gaebar-aep test app is built on app-engine-patch. It also contains the same functional test suite and you can get it from:
 
-http://github.com/aral/gaebar-aep/tree
+http://github.com/aral/gaebar-aep/tree/master
 
 Look in the readme files in each project for instructions on how to set up and test them locally.
 
