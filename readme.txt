@@ -8,27 +8,27 @@ Copyright (c) 2009 Aral Balkan. http://aralbalkan.com
 Released under the GNU GPL v3 License. See license.txt for the full license or read it here:
 http://www.gnu.org/licenses/gpl-3.0-standalone.html
 
-Limitations
-===========
-
-Ancestor relationships are not supported. Expando properties are not supported.
-
-Quite simply, I don't use either of these features and haven't gotten my head around the whole ancestor thing at all. I'm going to get round to supporting these (and heck, it may just work, so give it a try).
-
-Feedback and patches on these limitations is always welcome! :)
 
 Installation
 ============
 
-1. *IMPORTANT* Patch your dev_appserver.py as per the instructions here: http://aralbalkan.com/1440 (and please star issue 616 if you'd like Google to fix this so we can remove this step: http://code.google.com/p/googleappengine/issues/detail?id=616). 
+*IMPORTANT* Patch your dev_appserver.py as per the instructions here: http://aralbalkan.com/1440 (and please star issue 616 if you'd like Google to fix this so we can remove this step: http://code.google.com/p/googleappengine/issues/detail?id=616). 
 
 This is required in order to override some of the local dev server restrictions to allow automatic downloads of backups. Gaebar will not work unless you implement this patch.
 
 
-2. Unzip Gaebar.zip to a folder called gaebar/ off the root of your Django project. You *must* place Gaebar at this location for the app to work properly.
+A. From an archieve.
+--------------------
+
+You can get a .zip or .tar of Gaebar from:
+http://github.com/aral/gaebar/tree/master
+
+(Click on the Download link and choose your poison.)
+
+1. Unzip the Gaebar archive to a folder called gaebar/ off the root of your Django project. You *must* place Gaebar at this location for the app to work properly.
 
 
-3. Add Gaebar to your list of INSTALLED_APPS in your application's settings.py file. e.g.
+2. Add Gaebar to your list of INSTALLED_APPS in your application's settings.py file. e.g.
 
 	INSTALLED_APPS = (
 		# Other apps...
@@ -36,7 +36,7 @@ This is required in order to override some of the local dev server restrictions 
 	)
 
 
-4. In your main urls.py, map the Gaebar app to the URL shown below. You *must* map Gaebar to the exact URL shown below or the app will not work. 
+3. In your main urls.py, map the Gaebar app to the URL shown below. You *must* map Gaebar to the exact URL shown below or the app will not work. 
 
 urlpatterns = patterns('',
 
@@ -45,7 +45,7 @@ urlpatterns = patterns('',
 	url(r'^gaebar/', include('gaebar.urls')),
 )
 
-5. In your app.yaml file, add the following entry to map Gaebar's static files (images, js, etc.) correctly:
+4. In your app.yaml file, add the following entry to map Gaebar's static files (images, js, etc.) correctly:
 
 # Static: Gaebar
 - url: /gaebar/static
@@ -58,6 +58,48 @@ properties:
 - name: backup
 - name: created_at
 
+B. From GitHub
+--------------
+
+You can install the latest Gaebar trunk into your projects from GitHub using Git.
+
+
+1(a). If you're using Git for your main project
+-----------------------------------------------
+
+Add Gaebar to your project as a submodule:
+
+git submodule add git://github.com/aral/gaebar-gaed.git 
+
+
+1(b). If you're not using Git for your main project
+---------------------------------------------------
+
+Clone Gaebar into a folder called gaebar off the root folder of your project: 
+
+git clone git://github.com/aral/gaebar-gaed.git 
+
+2. To check for updates, go into gaebar/ and git pull
+
+(Don't forget to git commit your main project after you've updated Gaebar to a new version via git pull.)
+
+
+GIT NOTE FOR WINDOWS USERS:
+---------------------------
+
+I've successfully tested this with msysgit 1.5.6.1 (http://code.google.com/p/msysgit/). 
+
+However, msysgit 1.6.0.2 appears to have a problem with submodules (see http://icanhaz.com/msysgitsubmoduleerroron1602).
+
+You get the following error:
+
+$ git submodule update
+error: Entry 'readme.txt' would be overwritten by merge. Cannot merge.
+Unable to checkout 'de51abeaa23173bbafe2313fd26d27fd6e032c31' in submodule path 'gaebar'
+
+The workaround is to use msysgit 1.5.6.1 (the currently featured download on msysgit).
+
+
 Settings
 ========
 
@@ -66,9 +108,8 @@ Before you start using Gaebar, you have to configure it by added a few lines to 
 #
 # Gaebar
 #
-GAEBAR_LOCAL_URL = 'http://localhost:8000'
 
-GAEBAR_BACKUPS_FOLDER = '/Users/aral/projects/headconference/trunk/gaebar/backups/'
+GAEBAR_LOCAL_URL = 'http://localhost:8000'
 
 GAEBAR_SECRET_KEY = 'change_this_to_something_random'
 
@@ -79,37 +120,15 @@ GAEBAR_SERVERS = {
 }
 
 GAEBAR_MODELS = (
-	(
-		'core.models', 
-		(u'GeoPlanetLocation', u'Hub', u'Person', u'Invitation', u'Email', u'Email2', u'GoogleAccount', u'File', u'Tag', u'Group', u'MicroSponsorship', u'Event', u'Purchase', u'CountryCounts',),
-	),
-	(
-		'lib.counter', 
-		(u'Counter',),
-	),
+     (
+          'app1.models', 
+          (u'Profile', u'GoogleAccount', u'AllOtherTypes', u'PlasticMan'),
+     ),
+     (
+          'app2.models', 
+          (u'Simple',),
+     ),
 )
-
-
-
-Testing Gaebar locally:
-=======================
-
-(Optional) If you want to test Gaebar locally, you need to run two instances of the local development server. You will use one as your local development server and the other you will pretend is the deployment server that you want to back up.
-
-*Important* I had to implement the following hack in order to get local tests to run correctly while using appenginepatch: http://aralbalkan.com/1755. You may want to keep it in mind in case you run into the same issue.
-
-I usually run a server on port 8000 to act as the local development server and port 8080 to act as the remote server. 
-
-Add the following into your settings file, substituting the ports of your servers:
-
-GAEBAR_LOCAL_URL = 'http://localhost:8000'
-
-GAEBAR_SERVERS = {
-	u'Local Test': u'http://localhost:8080',
-	# Other servers...
-}
-
-Populate your datastore with some sample data then hit your faux remote server (e.g., http://localhost:8080/gaebar/) and start a backup. It should back up the datastore and then hit the local server (port 8000) to download the backup. You will find your backup files in the gaebar/backups folder (as specified by settings.GAEBAR_BACKUPS_FOLDER).
 
 
 How it works
@@ -119,12 +138,11 @@ Gaebar backs up the data in your datastore to Python code. It restores your data
 
 Since a backup is a long running process, and since Google App Engine doesn't support long-running processes, Gaebar fakes a long running process by breaking up the backup and restore processes into bite-sized chunks and repeatedly hitting the server via Ajax calls. 
 
-By default, Gaebar backs up 5 rows at a time to avoid the short term CPU and 10-second call duration quotas and splits the generated code into code shards of under 300KB to avoid the 1MB limit on objects. You can change these defaults in the views.py file if your app has higher quotas and you want faster backups and restores. 
+By default, Gaebar backs up 5 rows at a time to avoid the short term CPU and 10-second call duration quotas and splits the generated code into code shards of approx. 300KB to avoid the 1MB limit on objects. You can change these defaults in the views.py file if your app has higher quotas and you want faster backups and restores. 
 
 Gaebar only works with Django applications on Google App Engine. Both appenginepatch and App Engine Helper are supported.
 
 Please test Gaebar out with sample data locally before testing it on your live app. We cannot be held responsible for any data loss or other damage that may arise from your use of Gaebar.
-
 
 
 Usage
@@ -169,7 +187,7 @@ C. Restore data to a staging app:
 
 Although Google App Engine gives you basic versioning control during deployment, it doesn't provide a staging environment where you can test out updates with real data on the deployment server without your end users seeing.
 
-With Gaebar, you can set up your own staging application. Simply set up a separate application, clone your app folder (changing the app name), and deploy. Then, backup your data from your main app. And deploy again to upload your backups to the staging app. On the staging app, restore the data and you can test your latest changes with real data before exposing those changes to your users.
+With Gaebar, you can set up your own staging application. Simply set up a separate application, change the app name in app.yaml, and deploy. Then, backup your data from your main app. Copy the backup to the staging application and deploy the staging app again to upload your backups to the staging app. On the staging app, restore the data and you can test your latest changes with real data before exposing those changes to your users.
 
 NOTE: When you're deploying, remember that you will also deploy any backups that are in the gaebar/backups folder. It's a good idea to only deploy with the backup you want to restore to reduce the number of files in your app so as not to hit the 1,000 file limit. You cannot harm the app by moving or deleting backup folders.
 
@@ -184,9 +202,36 @@ If something happens to your main application, you can restore from a backup.
 NOTE: When you're deploying, remember that you will also deploy any backups that are in the gaebar/backups folder. It's a good idea to only deploy with the backup you want to restore to reduce the number of files in your app so as not to hit the 1,000 file limit. You cannot harm the app by moving or deleting backup folders.
 
 
+A Note on restoring and existing data
+=====================================
+
+When restoring a row, Gaebar checks to see if the original key for the row that was backed up exists in the datastore. If it does, it removes it. 
+
+This means that as long as you are restoring to the same datastore you backed up from or to an empty datastore, the datastore will not contain any duplicate entries after the restore process is complete.
+
+To be extra safe, however, you may want to empty your existing datastore before restoring. 
+
+The next release of Gaebar will have a utility that does this for you.  
+
+
+Testing Gaebar locally:
+=======================
+
+You can test Gaebar locally to make sure that it works on your system by using one of the two test applications, gaebar-gaed or gaebar-aep.
+
+The gaebar-gaed test app is built on Google App Engine Django (also known as Google App Engine Helper). It contains the Gaebar functional test suite. You can get it from:
+
+http://github.com/aral/gaebar-gaed/tree
+
+The gaebar-aep test app is built on app-engine-patch. It also contains the same functional test suite and you can get it from:
+
+http://github.com/aral/gaebar-aep/tree
+
+Look in the readme files in each project for instructions on how to set up and test them locally.
+
+
 Known Issues
 ============
 
-* Running restore twice on the same data store may not work. TODO: Look into how we can make this work *and* maintain support for both regular keys and keys with key names.
-
+None.
 

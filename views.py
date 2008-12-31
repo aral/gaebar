@@ -74,11 +74,6 @@ for modelstuple in settings.GAEBAR_MODELS:
 		__import__(model_package, globals(), locals(), model_classes)
 
 
-# Are we running on the local development server?
-IS_DEV = False
-if 'SERVER_SOFTWARE' in os.environ:
-	IS_DEV = os.environ['SERVER_SOFTWARE'].startswith('Dev')
-
 
 ######################################################################
 #
@@ -119,6 +114,33 @@ backup_update_key_rc = re.compile(backup_update_key)
 """
 timestamp_regexp = r'^(\d\d\d\d)-(\d\d)-(\d\d)\s(\d\d):(\d\d):(\d\d)\.(\d*?)$'
 timestamp_regexp_compiled = re.compile(timestamp_regexp)
+
+"""
+	App.yaml app name regexp
+"""
+# Note: Not searching for ^application since the default app.yaml that comes
+# in appenginepatch has a few invisible characters before the application and fails
+# the match.
+# app_name_from_app_yaml_regexp = r'application: (.*?)\n'
+# app_name_from_app_yaml_regexp_compiled = re.compile(app_name_from_app_yaml_regexp)
+
+
+"""
+	Other globals
+"""
+
+# Are we running on the local development server?
+IS_DEV = False
+if 'SERVER_SOFTWARE' in os.environ:
+	IS_DEV = os.environ['SERVER_SOFTWARE'].startswith('Dev')
+
+# Get the application name. Many thanks to yejun for showing me  
+# how to get the application id on the App Engine Google Group.
+application_name = os.environ.get('APPLICATION_ID') 
+
+logging.info('Application name: ')
+logging.info(application_name)
+
 
 ######################################################################
 #
@@ -198,8 +220,18 @@ def index(request):
 	if 'complete' in request.REQUEST:
 		context['complete'] = True
 		
-	BACKUPS_FOLDER = settings.GAEBAR_BACKUPS_FOLDER
+	# Default backups folder -- will work everywhere except locally
+	# on app-engine-patch projects (again, because the working folder is
+	# common/appenginepatch/ instead of the app root.)
+	backups_folder = 'gaebar/backups/'
 	
+	# App engine patch?
+	if not os.path.exists('gaebar'):
+		# Yep
+		backups_folder = '../../gaebar/backups/'
+
+	logging.info('**** Backups folder is ' + backups_folder)
+
 	current_host = request.get_host()
 
 	# Make sure that the current host isn't the local server (so that user doesn't
@@ -214,13 +246,14 @@ def index(request):
 		for server in servers:
 			url = servers[server]
 			if current_host in url:
-				current_host = server		
+				current_host = server	
+	
 	
 		context['current_host'] = current_host
 	
 	
-	folder_names = [x for x,y,z in os.walk(BACKUPS_FOLDER)]
-	folders = [z for x,y,z in os.walk(BACKUPS_FOLDER)]
+	folder_names = [x for x,y,z in os.walk(backups_folder)]
+	folders = [z for x,y,z in os.walk(backups_folder)]
 
 	folder_info = []
 	if (len(folders) > 1):
@@ -233,7 +266,7 @@ def index(request):
 		
 			# TODO: We need to store host information for backups with the backup
 			# so we know where to go to re-download stuff if any fail.
-			metadata_url = settings.REMOTE_URL + '/admin/backup/metadata/' + urlquote(make_timestamp_from_safe_file_name(folder_name)) + '/' + urlquote(settings.SECRET_KEY) + '/'
+			metadata_url = request.get_host() + '/gaebar/metadata/' + urlquote(make_timestamp_from_safe_file_name(folder_name)) + '/' + urlquote(settings.SECRET_KEY) + '/'
 		
 			# e.g., details = ['backup', '2008', '09', '21', 'at', '10', '15', '47', '931862']
 			details = folder_name.split('_')
@@ -507,7 +540,7 @@ def backup_rows(request):
 
 		# key_repr_safe = backup_existing_key_hack_rc.sub(r'long(\1)', key_repr)
 		
-		code += u'def row_%d(p):\n' % backup.num_rows
+		code += u'def row_%d(p, app_name):\n' % backup.num_rows
 		
 		# Generate code: Check pass number (p)
 		code += u'\tif p == 0:\n'
@@ -557,8 +590,21 @@ def backup_rows(request):
 
 		##################################################################################
 		
+		# Does this entity have a parent?
+		parent_code = ''
+		if row.parent():
+			# Entity has a parent, maintain the ancestor relationship.
+			parent = row.parent()
+			parent_key = row.parent().key().__repr__()
+			parent_key = update_keys(parent_key)
+			
+			logging.info(parent_key)
+			
+			parent_code = ', parent=%s' % parent_key
+			logging.info('Parent key found, adding %s ' % parent_key)
+		
 		# Generate code: Create the new entity
-		code += u'\t\t%s = %s(key_name="%s")\n' % (row_name, current_model, key_name)
+		code += u'\t\t%s = %s(key_name="%s"%s)\n' % (row_name, current_model, key_name, parent_code)
 
 			
 		# Store fields with references separately as these will be 
@@ -627,6 +673,16 @@ def backup_rows(request):
 				# Pickle and store (not a reference, list of keys, etc.)
 				value = repr(pickle.dumps(raw_value))
 				code += u'\t\t%s.%s = pickle.loads(%s)\n' % (row_name, field, value)
+
+		# Does this row belong to an Expando model?
+		if hasattr(row, '_dynamic_properties'):
+			# Expando row, add the dynamic properties.
+			logging.info('Expando row found, pickling dynamic properties...')
+			code += u'\t\t# Expando dynamic properties:\n'
+			dynamic_properties = row._dynamic_properties
+			for dynamic_property in dynamic_properties:
+				value = repr(pickle.dumps(dynamic_properties[dynamic_property]))
+				code += u'\t\t%s.%s = pickle.loads(%s)\n' % (row_name, dynamic_property, value)
 
 		# Put the new row
 		code += u'\t\t%s.put()\n' % row_name
@@ -827,6 +883,11 @@ def backup_local_download_remote_backup(request):
 	
 	if 'url' in request.REQUEST:
 		host_url = request.REQUEST['url']
+		
+		# Make sure host URL starts with http:// protocol.
+		if not host_url[0:7] == 'http://':
+			host_url = 'http://' + host_url
+		
 		logging.info('Host url: ' + host_url)
 	else:
 		return HttpResponse('Missing URL in local download of remote backup.')
@@ -1069,7 +1130,7 @@ def backup_restore_row(request):
 	row_index: The row index to back up next.
 	pass_number: Pass number (0 or 1), signifying the first/second pass.
 	
-	Uses the Django secret key for authorization instead of the
+	Uses the Gaebar secret key from settings for authorization instead of the
 	autorization decorator. Otherwise, auth would fail while in the middle of 
 	a restore when the reference for the Admin's google account is broken.
 	
@@ -1172,7 +1233,7 @@ def backup_restore_row(request):
 	row_function = getattr(shard, row_function_name) #eval(row_path)
 	
 	# Run the row
-	row_function(pass_number)
+	row_function(pass_number, application_name)
 	
 	# Check if the restore is over.
 	if row_index == backup['num_rows'] - 1:
@@ -1312,6 +1373,9 @@ def backup_model(backup, context):
 
 def close_code_shard(code_shard, backup, code=None):
 	"""Closes a code shard."""
+
+	# Parameterize the application name in the code
+	code = parameterize_app_name(code)
 
 	# Save the old one and mark it as inactive
 	code_shard.active = False
@@ -1472,6 +1536,16 @@ def update_keys(code):
 	
 	"""
 	code = backup_update_key_rc.sub(r"'id\1',", code)
+	return code
+	
+def parameterize_app_name(code):
+	"""
+	During backup, replaces any references to the app name with a variable. When
+	restoring, the app name of the current app is passed to the restore function.
+	This lets us restore the data to any application and thus create staging servers.
+	
+	"""
+	code = code.replace("_app=u'%s'" % application_name, "_app=app_name")
 	return code
 
 def update_code_shard_metadata(code_shard, backup, current_model):
