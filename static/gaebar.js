@@ -207,16 +207,7 @@ function restoreProgressHandler(data, textStatus){
 		// Update the status messages.				
 		$("#lastRowRestored").html(data.row_index);
 		$("#lastModelRestored").html(data.model);
-		
-		passStr = '';
-		if (Number(data.pass_number) == 0) {
-			passStr = 'First pass'
-		} else {
-			passStr = 'Second pass'
-		}
-
-		$("#restorePassNumber").html(passStr);
-		
+				
 		if (data.created_at){
 			created_at_bits = data.created_at.split(" ");
 			created_at_date = created_at_bits[0];
@@ -238,7 +229,7 @@ function restoreProgressHandler(data, textStatus){
 		$("#restoreAllModels").attr('value', modelsStr);
 		
 		// Recurse: call the backup rows method.
-		url = "/gaebar/restore-row/?secret=" + data.secret + "&folder_name=" + data.folder_name + "&row_index=" + data.next_row_index + "&pass_number=" + data.pass_number;
+		url = "/gaebar/restore-row/?secret=" + data.secret + "&folder_name=" + data.folder_name + "&row_index=" + data.next_row_index;
 		
 		lastCall = NO_RETRY
 		$.postJSON(url, restoreProgressHandler);

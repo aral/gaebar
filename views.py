@@ -658,7 +658,7 @@ def backup_rows(request):
 				# datastore, it will be rewritten while writing out the references section.
 				#
 				reference_key = raw_value.key().__repr__()
-				reference_fields_code += u'%s = %s.get(%s), ' % (field, raw_value_type_name, reference_key)		
+				reference_fields_code += u'%s = %s, ' % (field, reference_key)		
 				stored = True
 				
 			elif raw_value_type_name == 'list':
@@ -1094,7 +1094,6 @@ def get_restore_info(request):
 	result_dict = dict(
 		folder_name=folder_name, 
 		secret=secret, 
-		pass_number=0, 
 		next_row_index=0,
 		row_index=0,
 		models={},
@@ -1114,7 +1113,6 @@ def backup_restore_row(request):
 	secret: settings.GAEBAR_SECRET_KEY.
 	folder_name: Name of backup folder to restore.
 	row_index: The row index to back up next.
-	pass_number: Pass number (0 or 1), signifying the first/second pass.
 	
 	Uses the Gaebar secret key from settings for authorization instead of the
 	autorization decorator. Otherwise, auth would fail while in the middle of 
@@ -1171,15 +1169,7 @@ def backup_restore_row(request):
 	else:
 		result_dict = dict(error=True, error_message='Row index not provided in call to restore rows.')
 		result_json = simplejson.dumps(result_dict)
-		return HttpResponseServerError(result_json) 
-
-	if 'pass_number' in request.REQUEST:
-		pass_number = int(request.REQUEST['pass_number'])
-	else:
-		result_dict = dict(error=True, error_message='Pass number not provided in call to restore rows.')
-		result_json = simplejson.dumps(result_dict)
 		return HttpResponseServerError(result_json) 	
-	
 	
 	logging.info('Restore row called - arguments OK.')
 	
@@ -1219,70 +1209,32 @@ def backup_restore_row(request):
 	row_function = getattr(shard, row_function_name) #eval(row_path)
 	
 	# Run the row
-	row_function(pass_number, application_name)
+	row_function(application_name)
 	
 	# Check if the restore is over.
 	if row_index == backup['num_rows'] - 1:
 
-		# Is this the second pass?
-		if pass_number == 0:
-			# No, start the second pass
-			pass_number = 1
-			start_row = 0
-			
-			#return HttpResponseRedirect('/admin/backup/restore/row/' + folder_name + '/' + str(start_row) + '/'+ str(pass_number) + '/' + urlquote(secret) + '/')
-
-			# TODO: Refactor these result dicts to remove repetition. 
-
-			# Return the information for the next call
-			result_dict = dict(
-
-				folder_name=folder_name, 
-				secret=secret, 
-				row_index=row_index,
-
-				# TODO: Save the server name in the metadata
-				# backup_server_name=backup['server_name'],
-
-				pass_number=pass_number, 
-				next_row_index=start_row,
-				#model=current_model,
-				created_at=backup['created_at'],
-				models=backup['models'],
-				num_rows=backup['num_rows'],
-				num_shards=backup['num_shards'],
-				shard_number=shard_number,
-
-			)
-
-			result_json = simplejson.dumps(result_dict)
-			return HttpResponse(result_json)
+		# Restore is complete; take the user back to the backups list.
 				
-		
-		else:
-			# We're done, take the user back to the backups list.
+		# Return information 
+		result_dict = dict(
+			complete=True,
+			folder_name=folder_name, 
+			secret=secret, 
+							
+			# TODO: Save the server name in the metadata
+			# backup_server_name=backup.server_name,
 			
-			#return HttpResponseRedirect('/admin/backup/list/?restored=' + make_safe_file_name_from_timestamp(backup['created_at']))
+			created_at=backup['created_at'],
+			models=backup['models'],
+			num_rows=backup['num_rows'],
+			num_shards=backup['num_shards'],
+			shard_number=shard_number,
 			
-			# Return the information for the next call
-			result_dict = dict(
-				complete=True,
-				folder_name=folder_name, 
-				secret=secret, 
-								
-				# TODO: Save the server name in the metadata
-				# backup_server_name=backup.server_name,
-				
-				created_at=backup['created_at'],
-				models=backup['models'],
-				num_rows=backup['num_rows'],
-				num_shards=backup['num_shards'],
-				shard_number=shard_number,
-				
-			)
+		)
 
-			result_json = simplejson.dumps(result_dict)
-			return HttpResponse(result_json)
+		result_json = simplejson.dumps(result_dict)
+		return HttpResponse(result_json)
 			
 	else:
 	
@@ -1296,14 +1248,7 @@ def backup_restore_row(request):
 				break
 	
 		next_row_index = row_index + 1
-				
-		# next_row_url = '/admin/backup/restore/row/' + folder_name + '/' + str(next_row_index) + '/' + str(pass_number) + '/' + urlquote(secret) + '/'
-		# context['url'] = next_row_url
-		# context['row_index'] = row_index
-		# context['backup_name'] = folder_name
-		# context['pass_number'] = pass_number
-		# context['backup'] = backup
-		
+						
 		# Return the information for the next call
 		result_dict = dict(
 			folder_name=folder_name, 
@@ -1313,7 +1258,6 @@ def backup_restore_row(request):
 			# TODO: Save the server name in the metadata
 			# backup_server_name=backup['server_name'],
 
-			pass_number=pass_number, 
 			next_row_index=next_row_index,
 			model=current_model,
 			created_at=backup['created_at'],
@@ -1325,11 +1269,7 @@ def backup_restore_row(request):
 		)
 		
 		result_json = simplejson.dumps(result_dict)
-		return HttpResponse(result_json)
-		
-		# Display progress and recurse via META refresh tag.
-		# return helpers.render_response('admin/backup/restore_redirect', first_level, second_level, context)
-	
+		return HttpResponse(result_json)	
 
 	
 ######################################################################
