@@ -1,4 +1,4 @@
-Gaebar (Google App Engine Backup and Restore) Beta 1
+Gaebar (Google App Engine Backup and Restore) Beta 2
 ====================================================
 
 A Naklab™ production sponsored by the <head> web conference - http://headconference.com
@@ -161,7 +161,7 @@ NOTE: When you're deploying, remember that you will also deploy any backups that
 
 * Make sure that your local dev server is running so that your backup can be downloaded to your local machine.
 
-Note: If your datastore has reference errors, i.e., non-existent references which would result in a 'ReferenceProperty failed to be resolved' error, the backup should fix those errors by ignoring those reference properties that do not exist. When you restore a Gaebar backup, those reference errors should no longer exist. You will see comments in the code shards when reference errors are encountered. 
+Note: If your datastore has reference errors, i.e., non-existent references which would result in a 'ReferenceProperty failed to be resolved' error, the backup should fix those errors by ignoring those reference properties that do not exist. When you restore a Gaebar backup, those reference errors should no longer exist. 
 
 Note: The largest datastore I've tested this with is for the <head> conference web site. The latest backup contained 18,955 rows stored in 223 code shards and resulted in a 35MB .datastore file when restored on the local development server (the restore process was left to run overnight due to the speed of the local datastore). Please send statistics of your backups and, of course, any errors you may encounter to aral@aralbalkan.com.
 
@@ -211,8 +211,6 @@ This means that as long as you are restoring to the same datastore you backed up
 
 To be extra safe, however, you may want to empty your existing datastore before restoring. 
 
-The next release of Gaebar will have a utility that does this for you.  
-
 
 Testing Gaebar locally:
 =======================
@@ -233,27 +231,4 @@ Look in the readme files in each project for instructions on how to set up and t
 Known Issues
 ============
 
-1. Required fields in models result in an exception. I am looking into fixing this now.
-
-Original bug report from Jonathan Ricketson follows:
-
-The problem is that my model class has a required field, and the app_engine validates the model on construction, not saving:
-
-I get an error like:
-Traceback (most recent call last):
-File “../common/zip-packages/django.zip/django/core/handlers/base.py”, line 86, in get_response
-File “../gaebar/views.py”, line 1236, in backup_restore_row
-row_function(pass_number, application_name)
-File “../gaebar/backups/backup_2008_12_31_at_11_23_33_529775/shard0.py”, line 15, in row_0
-account_0 = Account(key_name=”id801″)
-File “/opt/google_appengine.117/google/appengine/ext/db/__init__.py”, line 587, in __init__
-prop.__set__(self, value)
-File “/opt/google_appengine.117/google/appengine/ext/db/__init__.py”, line 387, in __set__
-value = self.validate(value)
-File “/opt/google_appengine.117/google/appengine/ext/db/__init__.py”, line 2100, in validate
-value = super(FloatProperty, self).validate(value)
-File “/opt/google_appengine.117/google/appengine/ext/db/__init__.py”, line 414, in validate
-raise BadValueError(’Property %s is required’ % self.name)
-BadValueError: Property interestRate is required
-
-
+None.
