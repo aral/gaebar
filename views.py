@@ -685,7 +685,7 @@ def backup_rows(request):
 		reference_fields_code = reference_fields_code[:-2]
 
 		# OK, all properties are ready, write out the row's constructor to create the row.
-		code += u'\t%s = %s(key_name="%s"%s%s%s)\n' % (row_name, current_model, key_name, properties_code, reference_fields_code, parent_code)
+		code += u'\t%s = %s(key_name=%s%s%s%s)\n' % (row_name, current_model, key_name.__repr__(), properties_code, reference_fields_code, parent_code)
 
 		# Does this row belong to an Expando model? (It's OK to put Expoando properties after the 
 		# constructor as they cannot be required.)
@@ -715,7 +715,7 @@ def backup_rows(request):
 	
 	try:
 		code_shard.put()
-	except InternalError:
+	except db.InternalError:
 		logging.warning('InternalError detected. on code_shard put. Trying twice more.')
 		# Try twice more to see if the datastore error goes away.
 		success = False
@@ -724,7 +724,7 @@ def backup_rows(request):
 				code_shard.put()
 				success = True
 				break
-			except InternalError:
+			except db.InternalError:
 				logging.warning('InternalError on code_shard put attempt ' + str(tries+1))
 		if not success:
 			logging.error('InternalError: could not put code_shard.')
