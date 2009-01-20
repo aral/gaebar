@@ -261,7 +261,11 @@ def index(request):
 		for i in range(len(folders)):
 			if i == 0: continue
 			num_files = len(folders[i])
-			folder_name_index = folder_names[i].index('backup_')
+			try:
+				folder_name_index = folder_names[i].index('backup_')
+			except ValueError:
+				continue # It's some other folder, not a backup
+
 			folder_name = folder_names[i][folder_name_index:]
 		
 			# TODO: We need to store host information for backups with the backup
