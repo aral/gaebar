@@ -1,4 +1,4 @@
-Gaebar (Google App Engine Backup and Restore) Beta 2
+Gaebar (Google App Engine Backup and Restore) Beta 3
 ====================================================
 
 A Naklab™ production sponsored by the <head> web conference - http://headconference.com
@@ -9,13 +9,8 @@ Released under the GNU GPL v3 License. See license.txt for the full license or r
 http://www.gnu.org/licenses/gpl-3.0-standalone.html
 
 
-Installation
-============
-
-*IMPORTANT* Patch your dev_appserver.py as per the instructions here: http://aralbalkan.com/1440 (and please star issue 616 if you'd like Google to fix this so we can remove this step: http://code.google.com/p/googleappengine/issues/detail?id=616). 
-
-This is required in order to override some of the local dev server restrictions to allow automatic downloads of backups. Gaebar will not work unless you implement this patch.
-
+Downloading and Installing Gaebar
+=================================
 
 A. From an archive.
 -------------------
@@ -25,55 +20,24 @@ http://github.com/aral/gaebar/tree/master
 
 (Click on the Download link and choose your poison.)
 
-1. Unzip the Gaebar archive to a folder called gaebar/ off the root of your Django project. You *must* place Gaebar at this location for the app to work properly.
+Unzip the Gaebar archive to a folder called gaebar/ off the root of your Django project. You *must* place Gaebar at this location for the app to work properly.
 
-
-2. Add Gaebar to your list of INSTALLED_APPS in your application's settings.py file. e.g.
-
-	INSTALLED_APPS = (
-		# Other apps...
-		'gaebar',
-	)
-
-
-3. In your main urls.py, map the Gaebar app to the URL shown below. You *must* map Gaebar to the exact URL shown below or the app will not work. 
-
-urlpatterns = patterns('',
-
-	# ...other URLs
-
-	url(r'^gaebar/', include('gaebar.urls')),
-)
-
-4. In your app.yaml file, add the following entry before any other static entries to map Gaebar's static files (images, js, etc.) correctly:
-
-# Static: Gaebar
-- url: /gaebar/static
-  static_dir: gaebar/static
-
-6. If you are declaring your indices manually, add the following to your index.yaml file (or run Gaebar locally in the dev server so that the index is created for you automatically):
-
-- kind: GaebarCodeShard
-properties:
-- name: backup
-- name: created_at
 
 B. From GitHub
 --------------
 
 You can install the latest Gaebar trunk into your projects from GitHub using Git.
 
-
-1(a). If you're using Git for your main project
------------------------------------------------
+(a) If you're using Git for your main project
+---------------------------------------------
 
 Add Gaebar to your project as a submodule:
 
 git submodule add git://github.com/aral/gaebar-gaed.git 
 
 
-1(b). If you're not using Git for your main project
----------------------------------------------------
+(b) If you're not using Git for your main project
+-------------------------------------------------
 
 Clone Gaebar into a folder called gaebar off the root folder of your project: 
 
@@ -84,26 +48,73 @@ git clone git://github.com/aral/gaebar-gaed.git
 (Don't forget to git commit your main project after you've updated Gaebar to a new version via git pull.)
 
 
-GIT NOTE FOR WINDOWS USERS:
----------------------------
+Configuring your project to use Gaebar
+======================================
 
-I've successfully tested this with msysgit 1.5.6.1 (http://code.google.com/p/msysgit/). 
+*IMPORTANT* Patch your dev_appserver.py as per the instructions here: http://aralbalkan.com/1440 (and please star issue 616 if you'd like Google to fix this so we can remove this step: http://code.google.com/p/googleappengine/issues/detail?id=616). 
 
-However, msysgit 1.6.0.2 appears to have a problem with submodules (see http://icanhaz.com/msysgitsubmoduleerroron1602).
-
-You get the following error:
-
-$ git submodule update
-error: Entry 'readme.txt' would be overwritten by merge. Cannot merge.
-Unable to checkout 'de51abeaa23173bbafe2313fd26d27fd6e032c31' in submodule path 'gaebar'
-
-The workaround is to use msysgit 1.5.6.1 (the currently featured download on msysgit).
+This is required in order to override some of the local dev server restrictions to allow automatic downloads of backups. Gaebar will not work unless you implement this patch.
 
 
-Settings
-========
+1. Add to installed apps
+------------------------
 
-Before you start using Gaebar, you have to configure it by added a few lines to your Django application's settings file (settings.py). The settings, with sample values, are shown below:
+Add Gaebar to your list of INSTALLED_APPS in your application's settings.py file. e.g.
+
+	INSTALLED_APPS = (
+		# Other apps...
+		'gaebar',
+	)
+
+
+2. Add to urls.py
+-----------------
+
+In your main urls.py, map the Gaebar app to the URL shown below. You *must* map Gaebar to the exact URL shown below or the app will not work. 
+
+urlpatterns = patterns('',
+
+	# ...other URLs
+
+	url(r'^gaebar/', include('gaebar.urls')),
+)
+
+3. Add the static folder
+------------------------
+
+In your app.yaml file, add the following entry before any other static entries to map Gaebar's static files (images, js, etc.) correctly:
+
+# Static: Gaebar
+- url: /gaebar/static
+  static_dir: gaebar/static
+
+4. Add indices
+--------------
+
+If you are declaring your indices manually, add the following to your index.yaml file (or run Gaebar locally in the dev server so that the index is created for you automatically):
+
+- kind: GaebarCodeShard
+  properties:
+  - name: backup
+  - name: created_at
+
+(Note: indices may take some time to create on the deployment environment. Until they are ready, backups will fail.)
+
+5. Modify settings.py
+---------------------
+
+Modify settings.py to add the GAEBAR_LOCAL_URL, GAEBAR_SECRET_KEY, GAEBAR_SERVERS, and GAEBAR_SERVERS settings to your application.
+
+GAEBAR_LOCAL_URL: Absolute URL of your local development server. Is used when
+downloading your remote backup to your local machine.
+
+GAEBAR_SECRET_KEY: A secret key that is used (a) to authenticate communication between your local deployment environment and the remote backup environment to facilitate the download of backups via urlfetch and (b) used during the restore process to authenticate the client.
+
+GAEBAR_SERVERS: Dictionary of named servers. Not essential but makes it easy to identify the servers by name when backing up and restoring. Also makes it easier to identify which server you're running Gaebar on.
+
+GAEBAR_MODELS: Tuple of models from your app that you want backed up.
+
+Here is a sample batch of settings that you can use as a guide:
 
 #
 # Gaebar
@@ -129,6 +140,12 @@ GAEBAR_MODELS = (
           (u'Simple',),
      ),
 )
+
+
+A note on templates: 
+--------------------
+
+If you get any template-related errors, try adding gaebar/templates to your TEMPLATE_DIRS settings variable.
 
 
 How it works
@@ -226,6 +243,22 @@ The gaebar-aep test app is built on app-engine-patch. It also contains the same 
 http://github.com/aral/gaebar-aep/tree/master
 
 Look in the readme files in each project for instructions on how to set up and test them locally.
+
+
+GIT NOTE FOR WINDOWS USERS:
+===========================
+
+I've successfully tested this with msysgit 1.5.6.1 (http://code.google.com/p/msysgit/). 
+
+However, msysgit 1.6.0.2 appears to have a problem with submodules (see http://icanhaz.com/msysgitsubmoduleerroron1602).
+
+You get the following error:
+
+$ git submodule update
+error: Entry 'readme.txt' would be overwritten by merge. Cannot merge.
+Unable to checkout 'de51abeaa23173bbafe2313fd26d27fd6e032c31' in submodule path 'gaebar'
+
+The workaround is to use msysgit 1.5.6.1 (the currently featured download on msysgit).
 
 
 Known Issues
