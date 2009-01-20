@@ -45,7 +45,7 @@ urlpatterns = patterns('',
 	url(r'^gaebar/', include('gaebar.urls')),
 )
 
-4. In your app.yaml file, add the following entry to map Gaebar's static files (images, js, etc.) correctly:
+4. In your app.yaml file, add the following entry before any other static entries to map Gaebar's static files (images, js, etc.) correctly:
 
 # Static: Gaebar
 - url: /gaebar/static

@@ -138,8 +138,8 @@ if 'SERVER_SOFTWARE' in os.environ:
 # how to get the application id on the App Engine Google Group.
 application_name = os.environ.get('APPLICATION_ID') 
 
-logging.info('Application name: ')
-logging.info(application_name)
+# logging.info('Application name: ')
+# logging.info(application_name)
 
 
 ######################################################################
@@ -230,7 +230,7 @@ def index(request):
 		# Yep
 		backups_folder = '../../gaebar/backups/'
 
-	logging.info('**** Backups folder is ' + backups_folder)
+	# logging.info('**** Backups folder is ' + backups_folder)
 
 	current_host = request.get_host()
 
@@ -340,12 +340,10 @@ def backup_start(request):
 	if server_url == '':
 		server_url = 'http://' + current_host
 		 
-		
-	logging.info('Backup start: ')
+	logging.info('Gaebar backup started: ')
 	logging.info('Server name: ' + server_name)
 	logging.info('Server url: ' + server_url)	
-		
-		
+				
 	# Make sure no code shards were left over from a previous backup
 	# (This can happen if the backup failed with an error.)
 	active_code_shards = models.GaebarCodeShard.all().filter('active = ', True).fetch(100)
@@ -368,7 +366,7 @@ def backup_start(request):
 		for model_class in model_classes:
 			models_ordered_list.append(model_class)
 		
-	logging.info(models_ordered_list)
+	# logging.info(models_ordered_list)
 	
 	current_model = models_ordered_list[0]
 			
@@ -695,7 +693,7 @@ def backup_rows(request):
 		# constructor as they cannot be required.)
 		if hasattr(row, '_dynamic_properties'):
 			# Expando row, add the dynamic properties.
-			logging.info('Expando row found, pickling dynamic properties...')
+			# logging.info('Expando row found, pickling dynamic properties...')
 			code += u'\t# Expando dynamic properties:\n'
 			dynamic_properties = row._dynamic_properties
 			for dynamic_property in dynamic_properties:
@@ -751,7 +749,7 @@ def backup_rows(request):
 		update_code_shard_metadata(code_shard, backup, current_model)
 
 		try:
-			# logging.info('Backup: model ' + current_model + ': done')
+			logging.info('Backup: model ' + current_model + ': done')
 			code_shard.put()			
 			
 			models_list.remove(current_model)
@@ -793,8 +791,8 @@ def backup_rows(request):
 			remote_url = backup.server_url
 			local_url = settings.GAEBAR_LOCAL_URL
 			
-			logging.info('remote_url = ' + remote_url)
-			logging.info('local_url = ' + local_url)
+			# logging.info('remote_url = ' + remote_url)
+			# logging.info('local_url = ' + local_url)
 
 			# TODO: Make the gaebar app name configurable
 			download_url = local_url + '/gaebar/download-remote/?created_at=' + urlquote(backup.created_at) + '&num_shards=' + str(backup.num_shards) + '&url=' + remote_url
@@ -804,7 +802,7 @@ def backup_rows(request):
 			
 			# Backing up of data is done. Inform user and start
 			# downloading it to their local machine.	
-			logging.info('Backup: completed backing up rows.')
+			# logging.info('Backup: completed backing up rows.')
 			
 			result_json = simplejson.dumps(dict(complete=True, download_url=download_url))
 			return HttpResponse(result_json)
@@ -878,19 +876,19 @@ def backup_local_download_remote_backup(request):
 		if not host_url[0:7] == 'http://':
 			host_url = 'http://' + host_url
 		
-		logging.info('Host url: ' + host_url)
+		# logging.info('Host url: ' + host_url)
 	else:
 		return HttpResponse('Missing URL in local download of remote backup.')
 
 	if 'created_at' in request.REQUEST:
 		created_at = request.REQUEST['created_at']
-		logging.info('Created at: ' + created_at)
+		# logging.info('Created at: ' + created_at)
 	else:
 		return HttpResponse('Missing created at in local download of remote backup.')
 
 	if 'num_shards' in request.REQUEST:
 		num_shards = request.REQUEST['num_shards']
-		logging.info('Num shards: ' + num_shards)
+		# logging.info('Num shards: ' + num_shards)
 	else:
 		return HttpResponse('Missing num shards in local download of remote backup.')
 
@@ -946,7 +944,7 @@ def backup_local_download_remote_backup(request):
 	shard_index = -1
 	while result != 'NO_MORE_SHARDS':
 		shard_index += 1
-		logging.info('Attempting to download the next code shard (number ' + str(shard_index) + ')...')
+		# logging.info('Attempting to download the next code shard (number ' + str(shard_index) + ')...')
 		download_url = host_url + '/gaebar/download-py/' + urlquote(created_at) + '/' + secret + '/'
 		file_path = backup_folder + '/shard' + str(shard_index) + '.py'
 		result = save_file_from_url(download_url, file_path)
@@ -995,7 +993,7 @@ def backup_download_py(request, created_at='', secret=''):
 	Note: Stores the last downloaded shard in the backup entity.
 	"""
 	
-	logging.info('Backup download py called!')
+	# logging.info('Backup download py called!')
 	
 	if secret == settings.GAEBAR_SECRET_KEY:	
 		# Download a python file of the requested code shard.
@@ -1008,11 +1006,11 @@ def backup_download_py(request, created_at='', secret=''):
 
 		if backup.last_downloaded_shard_created_at == None:
 			# This is the first shard download request for this backup: start from the first shard.
-			logging.info('First request to download a code shard for this backup!')
+			# logging.info('First request to download a code shard for this backup!')
 			query = code_shards.order('created_at')
 		else:
 			# Sort on created_at and get the next entity.
-			logging.info('Searching for the next code shard...')
+			# logging.info('Searching for the next code shard...')
 			last_downloaded_shard_created_at = backup.last_downloaded_shard_created_at
 			query = models.GaebarCodeShard.gql('WHERE backup = :1 AND created_at > :2 ORDER BY created_at', backup, last_downloaded_shard_created_at)
 
@@ -1022,8 +1020,8 @@ def backup_download_py(request, created_at='', secret=''):
 		if code_shard_result:
 			code_shard = code_shard_result[0]
 			
-			logging.info('Code shard found - saving created at:')
-			logging.info(code_shard.created_at)
+			# logging.info('Code shard found - saving created at:')
+			# logging.info(code_shard.created_at)
 			
 			# Save this as the last downloaded code shard.
 			backup.last_downloaded_shard_created_at = code_shard.created_at
@@ -1031,7 +1029,7 @@ def backup_download_py(request, created_at='', secret=''):
 			
 		else:
 			
-			logging.info('No more code shards!')
+			# logging.info('No more code shards!')
 			
 			# Signal to the client that there are no more code shards.
 			response = HttpResponse('NO_MORE_SHARDS', 'text/plain')
@@ -1089,7 +1087,7 @@ def get_restore_info(request):
 		result_json = simplejson.dumps(result_dict)
 		return HttpResponseServerError(result_json)
 
-	logging.info('Restore start called for folder ' + folder_name)
+	# logging.info('Restore start called for folder ' + folder_name)
 	
 	secret = urlquote(settings.GAEBAR_SECRET_KEY)	
 
@@ -1141,7 +1139,7 @@ def backup_restore_row(request):
 		
 		# Find the folder path
 		cwd = os.getcwd()
-		logging.info(cwd)
+		# logging.info(cwd)
 
 		# If we're running on AppEngineHelper, we should be in the root folder of the app 
 		# (so do nothing). With appengine patch, we're in the common/appenginepatch/ folder 
@@ -1175,7 +1173,7 @@ def backup_restore_row(request):
 		result_json = simplejson.dumps(result_dict)
 		return HttpResponseServerError(result_json) 	
 	
-	logging.info('Restore row called - arguments OK.')
+	# logging.info('Restore row called - arguments OK.')
 	
 	# Load the metadata
 	metadata_module_name = 'gaebar.backups.' + folder_name + '.metadata'
@@ -1416,8 +1414,8 @@ def save_file_from_url(url, file_path, num_tries = 0):
 	Returns the content.
 	"""
 	
-	logging.info('About to fetch ' + url)
-	logging.info('Downloading and saving to ' + file_path)
+	# logging.info('About to fetch ' + url)
+	# logging.info('Downloading and saving to ' + file_path)
 	
 	#url = u'http://localhost:8080/gaebar/download-py/2008-12-15%2019%3A30%3A02.236023/0/change_this_to_something_random/'
 	#url = 'http://aralbalkan.com:80/'
@@ -1425,7 +1423,7 @@ def save_file_from_url(url, file_path, num_tries = 0):
 	MAX_TRIES = 5;
 	while num_tries < MAX_TRIES:
 		try:
-			logging.info('Attempt # ' + str(num_tries+1))
+			# logging.info('Attempt # ' + str(num_tries+1))
 			
 			result = urlfetch.fetch(url)
 					
@@ -1448,8 +1446,8 @@ def save_file_from_url(url, file_path, num_tries = 0):
 	if content == 'NO_MORE_SHARDS':
 		return content
 	
-	logging.info('Content:')
-	logging.info(content)
+	# logging.info('Content:')
+	# logging.info(content)
 	
 	f = file(file_path, 'w')
 	f.write(content)
