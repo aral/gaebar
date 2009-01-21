@@ -182,6 +182,8 @@ Note: If your datastore has reference errors, i.e., non-existent references whic
 
 Note: The largest datastore I've tested this with is for the <head> conference web site. The latest backup contained 18,955 rows stored in 223 code shards and resulted in a 35MB .datastore file when restored on the local development server (the restore process was left to run overnight due to the speed of the local datastore). Please send statistics of your backups and, of course, any errors you may encounter to aral@aralbalkan.com.
 
+Note 2: If you'd like to get more meaningful exceptions, you may want to add DEBUG_PROPAGATE_EXCEPTIONS = True to your settings.py on the deployment server.
+
 
 B. Restore data locally:
 ------------------------
