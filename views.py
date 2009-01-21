@@ -384,7 +384,8 @@ def backup_start(request):
 	code_shard.backup = backup
 	code = code_shard.code
 		
-	code = u'"""\n\tDatastore backup for %s\n\tStarted on: %s.\n"""\n\n' % (server_name, get_date_string())
+	#code = u'"""\n\tDatastore backup for %s\n\tStarted on: %s.\n"""\n\n' % (server_name, get_date_string())
+	code = u'# coding: utf8\n"""\n\tDatastore backup for %s\n\tStarted on: %s.\n"""\n\n' % (server_name, get_date_string())
 	code = add_code_shard_imports(code)
 
 	code_shard.code = code
@@ -508,7 +509,8 @@ def backup_rows(request):
 			code_shard = models.GaebarCodeShard()
 			code_shard.backup = backup
 			code_shard.start_row = backup.num_rows
-			code = add_code_shard_imports('')
+			#code = add_code_shard_imports('')
+			code = add_code_shard_imports(u'# coding: utf8\n')			
 			
 			# Update the code shard count on the backup instance
 			backup.num_shards += 1
@@ -544,10 +546,12 @@ def backup_rows(request):
 		
 		code += u'def row_%d(app_name):\n' % backup.num_rows
 				
-		# Generate code: Check if entity already exists and delete it if it does
+		# Generate code: Check if entity already exists and delete it if it
+		# does, by bypassing standard delete logic, because it may be overridden.
 		code += u'\texisting_entity = %s.get(%s)\n' % (current_model, key_repr)
 		code += u'\tif existing_entity:\n'
-		code += u'\t\texisting_entity.delete()\n'
+		#code += u'\t\texisting_entity.delete()\n'
+		code += u'\t\t_delete(existing_entity)\n'
 		
 		# code += u'\t# Key id = ' + unicode(key_id) + '\n'
 		# code += u'\t# Parent = ' + unicode(row.parent()) + '\n'
@@ -599,7 +603,8 @@ def backup_rows(request):
 			
 			# logging.info(parent_key)
 			
-			parent_code = ', parent=%s' % parent_key
+			# parent_code = ', parent=%s' % parent_key
+			parent_code = ', parent=_get(%s)' % parent_key
 			# logging.info('Parent key found, adding %s ' % parent_key)
 		
 		
@@ -687,7 +692,8 @@ def backup_rows(request):
 		reference_fields_code = reference_fields_code[:-2]
 
 		# OK, all properties are ready, write out the row's constructor to create the row.
-		code += u'\t%s = %s(key_name=%s%s%s%s)\n' % (row_name, current_model, key_name.__repr__(), properties_code, reference_fields_code, parent_code)
+		# code += u'\t%s = %s(key_name=%s%s%s%s)\n' % (row_name, current_model, key_name.__repr__(), properties_code, reference_fields_code, parent_code)
+		code += u'\t%s = %s(key_name=u"%s"%s%s%s)\n' % (row_name, current_model, key_name, properties_code, reference_fields_code, parent_code)
 
 		# Does this row belong to an Expando model? (It's OK to put Expoando properties after the 
 		# constructor as they cannot be required.)
@@ -701,8 +707,10 @@ def backup_rows(request):
 				code += u'\t%s.%s = pickle.loads(%s)\n' % (row_name, dynamic_property, value)
 
 		# Put the new row
-		code += u'\t%s.put()\n\n' % row_name
-				
+		# code += u'\t%s.put()\n\n' % row_name
+		# Put the new row bypassing standard put logic, because it may be overridden.
+		code += u'\t_put(%s)\n\n' % row_name
+						
 		# Update the index counter for this model
 		counter += 1
 		
@@ -1363,7 +1371,8 @@ def folder_exists(folder_name):
 def add_code_shard_imports(code):
 	"""Helper: Adds imports that are common to all code shards."""
 	code += u'import pickle\n'
-	code += u'from google.appengine.api.datastore import datastore_types\n'
+	# code += u'from google.appengine.api.datastore import datastore_types\n'
+	code += u'from google.appengine.api.datastore import datastore_types\nfrom google.appengine.ext.db import delete as _delete, put as _put, get as _get\n'
 	# code += u'from lib.counter import Counter\n'
 
 	# Import the models. Use the packages in the settings
