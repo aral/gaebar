@@ -1,3 +1,5 @@
+Please note: I am no longer supporting this project. The Google App Engine account that the demo is hosted on is also in the process of being shut down. I do not wish to further support a company whose business model is corporate surveillance. For more information, please see http://thelink.is/avoidingdigitalfeudalism and http://indiephone.eu.
+
 Gaebar (Google App Engine Backup and Restore) Beta 3
 ====================================================
 
